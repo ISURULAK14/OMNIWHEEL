@@ -1,0 +1,19 @@
+﻿# Build & Binary outputs
+bin/
+obj/
+*.exe
+*.dll
+*.pdb
+*.cer
+*.pfx
+
+# User Guide large PDF & media binaries
+*.pdf
+screenshots/
+test_fixtures/
+
+# System / IDE
+.antigravity/
+.vs/
+.vscode/
+*.user

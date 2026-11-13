@@ -1,0 +1,202 @@
+﻿[
+    {
+        "Timestamp":  "2026-11-11 20:41:23",
+        "Category":  "Packaging",
+        "Test":  "Setup Executable Size",
+        "Status":  "PASS",
+        "Metrics":  "237.25 MB",
+        "Details":  "Optimal all-in-one size"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:24",
+        "Category":  "Packaging",
+        "Test":  "Authenticode Digital Signature",
+        "Status":  "PASS",
+        "Metrics":  "Subject: CN=ISURU GUNASEKERA, O=OMNIWHEEL Tools",
+        "Details":  "Thumbprint: 601AF83746DF7AA5CFCFC83F8B6FA2FA03883B05"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:24",
+        "Category":  "Packaging",
+        "Test":  "Setup Bootstrap Architecture",
+        "Status":  "PASS",
+        "Metrics":  "x86 Universal Bootstrap (WoW64/x64 compatible), Windows GUI (No black console window)",
+        "Details":  "Universal Windows Installer"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:24",
+        "Category":  "Packaging",
+        "Test":  ".NET 8 Host \u0026 CoreCLR Self-Containment",
+        "Status":  "PASS",
+        "Metrics":  "Self-extracting payload verified",
+        "Details":  "Embedded runtime payload verified"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:24",
+        "Category":  "Installation",
+        "Test":  "Clean-Room Sandbox Isolation",
+        "Status":  "PASS",
+        "Metrics":  "Isolated directory: C:\\Users\\isuru\\AppData\\Local\\Temp\\OmniFeasibility_40112846",
+        "Details":  "Zero external files or DLLs in source folder"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Automated 1-Click Installation Execution",
+        "Status":  "PASS",
+        "Metrics":  "ExitCode: 0, Time: 21657ms",
+        "Details":  "Completed in 21.66s"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Payload: OMNIWHEEL.exe",
+        "Status":  "PASS",
+        "Metrics":  "152.53 MB",
+        "Details":  "Matches payload specifications"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Payload: ffmpeg.exe",
+        "Status":  "PASS",
+        "Metrics":  "217.27 MB",
+        "Details":  "Matches payload specifications"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Payload: WindowsOcrEngine.ps1",
+        "Status":  "PASS",
+        "Metrics":  "6343 bytes",
+        "Details":  "Matches payload specifications"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Payload: settings.ini",
+        "Status":  "PASS",
+        "Metrics":  "394 bytes",
+        "Details":  "Matches payload specifications"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Payload: app.ico",
+        "Status":  "PASS",
+        "Metrics":  "21537 bytes",
+        "Details":  "Matches payload specifications"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Payload: uninstall.exe",
+        "Status":  "PASS",
+        "Metrics":  "237.25 MB",
+        "Details":  "Matches payload specifications"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:41:46",
+        "Category":  "Installation",
+        "Test":  "Desktop Shortcut Deployment",
+        "Status":  "PASS",
+        "Metrics":  "Target: C:\\Users\\isuru\\AppData\\Local\\OMNIWHEEL\\OMNIWHEEL.exe",
+        "Details":  "Shortcut created and verified"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:43:32",
+        "Category":  "Installation",
+        "Test":  "Windows Explorer Context Menu Integration",
+        "Status":  "PASS",
+        "Metrics":  "Title: \u0027OMNIWHEEL (Donut) OMNIWHEEL (Donut)\u0027",
+        "Details":  "No admin rights needed (HKCU)"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:43:36",
+        "Category":  "Runtime",
+        "Test":  "Cold Boot \u0026 Process Spawning",
+        "Status":  "PASS",
+        "Metrics":  "PID: 22172, Boot: 3793ms",
+        "Details":  "Running in background"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:43:37",
+        "Category":  "Runtime",
+        "Test":  "Idle Memory Footprint (Working Set \u003c 50MB)",
+        "Status":  "PASS",
+        "Metrics":  "46.38 MB (Peak: 46.38 MB)",
+        "Details":  "Ultra-lean footprint: 9 threads, 302 handles"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:43:37",
+        "Category":  "Runtime",
+        "Test":  "UI Dispatcher Thread Responsiveness",
+        "Status":  "PASS",
+        "Metrics":  "Responding: True",
+        "Details":  "Message pump active, non-blocking"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:43:47",
+        "Category":  "Engine",
+        "Test":  "Image Rasterization: PNG -\u003e WEBP",
+        "Status":  "PASS",
+        "Metrics":  "Time: 9031ms, Size: 4642B",
+        "Details":  "Valid WebP produced"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:44:00",
+        "Category":  "Engine",
+        "Test":  "Vector Tracing: PNG -\u003e SVG",
+        "Status":  "PASS",
+        "Metrics":  "Time: 12517ms, Size: 4676B",
+        "Details":  "Valid SVG XML tags present"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:44:06",
+        "Category":  "Engine",
+        "Test":  "Document Compilation: TXT -\u003e PDF",
+        "Status":  "PASS",
+        "Metrics":  "Time: 5976ms, Size: 745B",
+        "Details":  "Valid %PDF binary header"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:44:15",
+        "Category":  "Engine",
+        "Test":  "Data Transformation: CSV -\u003e JSON",
+        "Status":  "PASS",
+        "Metrics":  "Time: 9135ms, Records: 3",
+        "Details":  "Valid JSON Array parsed"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:44:23",
+        "Category":  "Engine",
+        "Test":  "Optical Character Recognition (OCR to Text)",
+        "Status":  "PASS",
+        "Metrics":  "Time: 7744ms, Extracted: \u0027OMNIWHEEL FEASIBILITY TEST\u0027",
+        "Details":  "Accurate text recognition"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:44:32",
+        "Category":  "Engine",
+        "Test":  "Quick Editing: Grayscale Transform",
+        "Status":  "PASS",
+        "Metrics":  "Time: 9272ms, Size: 3265B",
+        "Details":  "Grayscale applied"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:45:15",
+        "Category":  "Lifecycle",
+        "Test":  "Clean Uninstallation \u0026 Reversibility",
+        "Status":  "PASS",
+        "Metrics":  "Time: 6157ms",
+        "Details":  "Binaries and registry entries fully purged"
+    },
+    {
+        "Timestamp":  "2026-11-11 20:45:24",
+        "Category":  "Lifecycle",
+        "Test":  "Re-installation After Clean Uninstall",
+        "Status":  "PASS",
+        "Metrics":  "ExitCode: 0",
+        "Details":  "Operational state restored"
+    }
+]

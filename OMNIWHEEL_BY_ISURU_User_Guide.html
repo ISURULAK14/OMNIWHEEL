@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OMNIWHEEL 1.0 — User Guide & Visual Manual</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm 14mm 14mm;
+    @bottom-right {
+      content: "Page " counter(page);
+      font-size: 8pt;
+      color: #94a3b8;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+    line-height: 1.55;
+    font-size: 9.5pt;
+  }
+  .page-break {
+    page-break-before: always;
+    break-before: page;
+    padding-top: 8px;
+  }
+
+  /* HERO & HEADER */
+  .hero-box {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .hero-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .app-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 26px;
+    background: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 24px;
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
+  }
+  .hero-title h1 {
+    margin: 0;
+    font-size: 24pt;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+  }
+  .hero-title p {
+    margin: 2px 0 0 0;
+    font-size: 10.5pt;
+    color: #64748b;
+    font-weight: 500;
+  }
+  .hero-badge {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 12px;
+    text-align: right;
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  /* CARDS & GRIDS */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  }
+  .card h3 {
+    margin: 0 0 8px 0;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3 span {
+    color: #7c3aed;
+    font-size: 14pt;
+  }
+
+  /* STEPS BANNER */
+  .step-banner {
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .step-banner h2 {
+    margin: 0 0 10px 0;
+    font-size: 13pt;
+    font-weight: 700;
+  }
+  .steps-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .step-item {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 10px 14px;
+    flex: 1;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .step-number {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    background: #ffffff;
+    color: #7c3aed;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 9pt;
+    margin-right: 6px;
+  }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+  }
+  th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 7.5pt;
+    font-weight: 700;
+  }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-blue { background: #e0f2fe; color: #0369a1; }
+  .badge-amber { background: #fef3c7; color: #b45309; }
+
+  /* KEYBOARD SHORTCUT PILL */
+  .keycap {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 8pt;
+    font-weight: 700;
+    color: #334155;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .visual-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+  }
+  .caption {
+    font-size: 8pt;
+    color: #64748b;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  
+  /* Interactive Three.js Frosted Glass Section (Screen Only) */
+  .frost-3d-interactive-zone {
+    background: radial-gradient(circle at 50% 20%, #1e1b4b 0%, #0f172a 60%, #020617 100%);
+    border-radius: 16px;
+    padding: 16px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    margin-bottom: 16px;
+    color: #f8fafc;
+    position: relative;
+    overflow: hidden;
+  }
+  .frost-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .frost-badge {
+    background: rgba(168, 85, 247, 0.25);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .frost-pill-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    color: #f8fafc;
+    font-size: 8.5pt;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+  }
+  .frost-pill-btn:hover {
+    background: rgba(168, 85, 247, 0.4);
+    border-color: #c084fc;
+    transform: translateY(-1px);
+  }
+  .frost-accent-pill {
+    background: #7c3aed !important;
+    border-color: #9333ea !important;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+  }
+  .frost-accent-pill:hover {
+    background: #6d28d9 !important;
+  }
+  .frost-theme-pill {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #cbd5e1;
+    font-size: 7.5pt;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .frost-theme-pill.active, .frost-theme-pill:hover {
+    background: rgba(168, 85, 247, 0.35);
+    border-color: #a855f7;
+    color: #ffffff;
+  }
+  @media print {
+    .frost-3d-interactive-zone, .no-print {
+      display: none !important;
+    }
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- ============================================================== -->
+  <!-- PAGE 1: WELCOME & QUICK START (3 EASY STEPS)                   -->
+  <!-- ============================================================== -->
+  <div class="hero-box">
+    <div class="hero-left">
+      <div class="app-icon" style="background: conic-gradient(#ff7a00 0deg 45deg, #7c3aed 45deg 90deg, #ff7a00 90deg 135deg, #7c3aed 135deg 180deg, #ff7a00 180deg 225deg, #7c3aed 225deg 270deg, #ff7a00 270deg 315deg, #7c3aed 315deg 360deg); border-radius: 50%; box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4), 0 4px 14px rgba(255, 122, 0, 0.4); border: 2px solid #ffffff; width: 36px; height: 36px; display: inline-block;"></div>
+      <div class="hero-title">
+        <h1>OMNIWHEEL 1.0</h1>
+        <p>Simple, Fast File Converter & Instant Previewer for Windows</p>
+      </div>
+    </div>
+    <div class="hero-badge">
+      <div style="color: #7c3aed; font-weight: 700;">USER GUIDE</div>
+      <div style="font-size: 7.5pt; color: #64748b;">VERSION 1.0 &bull; 2026 EDITION</div>
+    </div>
+  </div>
+
+  
+  <!-- THREE.JS 3D FROSTED GLASS INTERACTIVE PORTAL (SCREEN ONLY) -->
+  <div class="frost-3d-interactive-zone">
+    <div class="frost-header-row">
+      <div>
+        <span class="frost-badge">✨ 3D THREE.JS EXPERIENCE</span>
+        <h2 style="margin: 6px 0 2px 0; color: #ffffff; font-size: 15pt; font-weight: 700;">Photorealistic Frosted Glass Donut Wheel</h2>
+        <p style="margin: 0; color: #94a3b8; font-size: 8.5pt;">Physical glass transmission &amp; refraction shader. Tilt with your mouse, hover slices to pop in 3D, or flip faces.</p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button id="frost-btn-flip" class="frost-pill-btn" onclick="toggle3DWheelFace()">🔄 Flip Face (Tab)</button>
+        <a href="OMNIWHEEL_3D_Frosted_UI.html" target="_blank" class="frost-pill-btn frost-accent-pill">🚀 Fullscreen 3D Lab</a>
+      </div>
+    </div>
+    
+    <div id="frost-canvas-container" style="width: 100%; height: 320px; position: relative; border-radius: 12px; overflow: hidden; margin-top: 12px; background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #0f172a 60%, #020617 100%);">
+      <canvas id="threejs-frost-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+      <div id="frost-hover-hud" style="position: absolute; bottom: 12px; left: 16px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 20px; font-size: 8.5pt; color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.2); pointer-events: none;">
+        Front Face: 9 Primary Converters &bull; Move mouse to tilt in 3D
+      </div>
+    </div>
+
+    <div class="frost-theme-bar" style="display: flex; gap: 8px; margin-top: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap;">
+      <span style="font-size: 8pt; color: #94a3b8; font-weight: 600;">3D THEMES:</span>
+      <button class="frost-theme-pill active" onclick="switch3DTheme(this, 'purple', '#a855f7', '#7c3aed')">Royal Purple</button>
+      <button class="frost-theme-pill" onclick="switch3DTheme(this, 'frost', '#38bdf8', '#0284c7')">Nordic Frost</button>
+      <button class="frost-theme-pill" onclick="switch3DTheme(this, 'mint', '#34d399', '#059669')">Pastel Mint</button>
+      <button class="frost-theme-pill" onclick="switch3DTheme(this, 'rose', '#fb7185', '#e11d48')">Pastel Rose</button>
+      <button class="frost-theme-pill" onclick="switch3DTheme(this, 'amber', '#fbbf24', '#d97706')">Solar Amber</button>
+    </div>
+  </div>
+
+
+  <div class="step-banner">
+    <h2>🚀 Quick Start &mdash; How to Use OMNIWHEEL in 3 Easy Steps</h2>
+    <div class="steps-row">
+      <div class="step-item">
+        <div><span class="step-number">1</span><strong>Select Any File</strong></div>
+        <p style="margin: 4px 0 0 0; font-size: 8.5pt; opacity: 0.95;">Click on a photo, document, video, or song in File Explorer or on your Desktop.</p>
+      </div>
+      <div class="step-item">
+        <div><span class="step-number">2</span><strong>Hold the Hotkey</strong></div>
+        <p style="margin: 4px 0 0 0; font-size: 8.5pt; opacity: 0.95;">Hold down <span class="keycap" style="color:#0f172a;">` (Tilde)</span> or <span class="keycap" style="color:#0f172a;">Alt</span>. The circular conversion wheel appears instantly at your mouse!</p>
+      </div>
+      <div class="step-item">
+        <div><span class="step-number">3</span><strong>Point &amp; Release</strong></div>
+        <p style="margin: 4px 0 0 0; font-size: 8.5pt; opacity: 0.95;">Move your mouse toward the format you want and let go of the key. That's it! Conversion is done.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="align-items: center;">
+    <div class="visual-center">
+      <svg width="340" height="340" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 10px 24px rgba(124,58,237,0.12));">
+<circle cx="200" cy="200" r="192" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+<circle cx="200" cy="200" r="182" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M 143.6 34.3 A 175 175 0 0 1 256.4 34.3 L 221.3 137.5 A 66 66 0 0 0 178.7 137.5 Z" fill="#7C3AED" stroke="#6D28D9" stroke-width="1.5" />
+<text x="200.0" y="82.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#FFFFFF">PNG</text>
+<text x="200.0" y="105.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#E9D5FF">Convert to PNG</text>
+<text x="200.0" y="54.0" text-anchor="middle" font-size="14">🖼</text>
+<path d="M 156.3 34.7 A 171 171 0 0 1 243.7 34.7" stroke="#C4B5FD" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M 263.3 36.8 A 175 175 0 0 1 349.7 109.3 L 256.5 165.8 A 66 66 0 0 0 223.9 138.5 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="278.4" y="110.5" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">WEBP</text>
+<text x="263.0" y="127.9" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">Web Picture</text>
+<text x="296.4" y="89.1" text-anchor="middle" font-size="14">🌐</text>
+<path d="M 353.4 115.7 A 175 175 0 0 1 372.9 226.8 L 265.2 210.1 A 66 66 0 0 0 257.8 168.2 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="320.1" y="182.8" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">PDF</text>
+<text x="296.5" y="186.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">PDF Document</text>
+<text x="347.7" y="178.0" text-anchor="middle" font-size="14">📄</text>
+<path d="M 371.7 234.0 A 175 175 0 0 1 315.3 331.7 L 243.5 249.7 A 66 66 0 0 0 264.7 212.8 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="305.7" y="265.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">Trace SVG</text>
+<text x="284.9" y="252.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">Vector Shape</text>
+<text x="329.9" y="279.0" text-anchor="middle" font-size="14">📐</text>
+<path d="M 309.7 336.4 A 175 175 0 0 1 203.7 375.0 L 201.4 266.0 A 66 66 0 0 0 241.4 251.4 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="241.7" y="318.6" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">Line Art</text>
+<text x="233.5" y="295.1" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">B&W Outline</text>
+<text x="251.3" y="345.0" text-anchor="middle" font-size="14">✏️</text>
+<path d="M 196.3 375.0 A 175 175 0 0 1 90.3 336.4 L 158.6 251.4 A 66 66 0 0 0 198.6 266.0 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="158.3" y="318.6" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">TIFF</text>
+<text x="166.5" y="295.1" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">High-Res Print</text>
+<text x="148.7" y="345.0" text-anchor="middle" font-size="14">🖨</text>
+<path d="M 84.7 331.7 A 175 175 0 0 1 28.3 234.0 L 135.3 212.8 A 66 66 0 0 0 156.5 249.7 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="94.3" y="265.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">BMP</text>
+<text x="115.1" y="252.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">Bitmap Image</text>
+<text x="70.1" y="279.0" text-anchor="middle" font-size="14">🎨</text>
+<path d="M 27.1 226.8 A 175 175 0 0 1 46.6 115.7 L 142.2 168.2 A 66 66 0 0 0 134.8 210.1 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="79.9" y="182.8" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">ICO</text>
+<text x="103.5" y="186.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">Windows Icon</text>
+<text x="52.3" y="178.0" text-anchor="middle" font-size="14">⭐</text>
+<path d="M 50.3 109.3 A 175 175 0 0 1 136.7 36.8 L 176.1 138.5 A 66 66 0 0 0 143.5 165.8 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="121.6" y="110.5" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="13" fill="#1E293B">Half Size</text>
+<text x="137.0" y="127.9" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#64748B">50% Smaller</text>
+<text x="103.6" y="89.1" text-anchor="middle" font-size="14">🔍</text>
+<circle cx="200" cy="200" r="64" fill="#FFF1F2" stroke="#F43F5E" stroke-width="2" stroke-dasharray="4 3"/>
+<circle cx="200" cy="200" r="50" fill="#FFE4E6"/>
+<text x="200" y="196" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="800" font-size="11" fill="#E11D48">✕ CANCEL</text>
+<text x="200" y="212" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#F43F5E">MOVE HERE</text>
+</svg>
+      <div class="caption">Figure 1.1: The Front Wheel — Primary Formats Around Your Cursor</div>
+    </div>
+    <div>
+      <div class="card">
+        <h3><span>💡</span> What Makes OMNIWHEEL Special?</h3>
+        <p style="margin-bottom: 8px;"><strong>• Zero Waiting:</strong> No need to launch heavy third-party software just to convert a picture or document.</p>
+        <p style="margin-bottom: 8px;"><strong>• Safe &amp; Private:</strong> All conversions run directly on your computer. None of your private photos or documents are ever uploaded to the internet.</p>
+        <p style="margin-bottom: 8px;"><strong>• Cancel Anytime:</strong> If you change your mind, simply move your mouse into the pink circle in the center (labeled <strong>CANCEL</strong>) and let go. Nothing will be touched!</p>
+        <p style="margin: 0;"><strong>• Multiple Files at Once:</strong> Select multiple files and convert or combine them in a single mouse gesture.</p>
+      </div>
+
+      <div class="card" style="background: #faf5ff; border-color: #d8b4fe; margin-top: 10px;">
+        <h3 style="color: #6b21a8;"><span>🎯</span> Helpful Pointer Tip</h3>
+        <p style="margin: 0; font-size: 8.5pt; color: #581c87;">You do not need to click! Just hold the key, slide your mouse toward the slice, and release the key. The highlighted slice turns vibrant purple with a curved glow to confirm your choice.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- PAGE 2: THE FRONT WHEEL (EVERYDAY FILE CONVERTERS)              -->
+  <!-- ============================================================== -->
+  <div class="page-break"></div>
+  
+  <div class="card" style="margin-bottom: 14px;">
+    <h2><span>🎨</span> Page 2: Everyday Picture &amp; Document Converters (Front Wheel)</h2>
+    <p style="margin: 0; color: #64748b;">The Front Wheel gives you 9 fast tools for everyday pictures, icons, and office files.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3><span>🖼</span> Picture Formats Made Easy</h3>
+      <table>
+        <tr><th>Format</th><th>What It Does Best</th><th>When to Use It</th></tr>
+        <tr>
+          <td><span class="badge badge-purple">PNG</span></td>
+          <td>Crisp photos with clear background</td>
+          <td>Logos, screenshots, graphics</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">WEBP</span></td>
+          <td>Modern web picture (super lightweight)</td>
+          <td>Websites, sharing on WhatsApp / Discord</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-green">PDF</span></td>
+          <td>Universal printable document</td>
+          <td>Printing, sending official copies</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">TIFF</span></td>
+          <td>Ultra high-quality photo</td>
+          <td>Studio printing and archival</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">BMP</span></td>
+          <td>Classic uncompressed Windows bitmap</td>
+          <td>Legacy software and industrial tools</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-blue">ICO</span></td>
+          <td>Windows application and desktop icon</td>
+          <td>Customizing folder and shortcut icons</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3><span>✨</span> Special Smart Tools</h3>
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 700; color: #7c3aed; margin-bottom: 2px;">📐 Trace to Vector SVG</div>
+        <div style="font-size: 8.5pt; color: #475569;">Turns any picture into a clean vector drawing. You can zoom in forever without seeing any pixels or blurry edges! Perfect for logos.</div>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <div style="font-weight: 700; color: #7c3aed; margin-bottom: 2px;">✏️ Black &amp; White Line Art</div>
+        <div style="font-size: 8.5pt; color: #475569;">Extracts outlines like a coloring book page. Great for laser cutters, plotters, and homework worksheets.</div>
+      </div>
+      <div>
+        <div style="font-weight: 700; color: #7c3aed; margin-bottom: 2px;">🔍 Half Size (50% Smaller)</div>
+        <div style="font-size: 8.5pt; color: #475569;">Shrinks large phone camera photos so you can email them without hitting attachment limits.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- PAGE 3: THE BACK WHEEL (QUICK EDITS & TOOLKIT)                 -->
+  <!-- ============================================================== -->
+  <div class="page-break"></div>
+
+  <div class="card" style="margin-bottom: 14px;">
+    <h2><span>⚙️</span> Page 3: Quick Edits &amp; Handy Tools (The Back Wheel)</h2>
+    <p style="margin: 0; color: #64748b;">Need to crop a picture, remove the background, or combine PDFs? Just press <span class="keycap">Tab</span> while holding the wheel to flip to the <strong>Back Wheel</strong>!</p>
+  </div>
+
+  <div class="grid-2" style="align-items: center;">
+    <div class="visual-center">
+      <svg width="340" height="340" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 10px 24px rgba(124,58,237,0.12));">
+<circle cx="200" cy="200" r="196" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+<path d="M 144.4 18.3 A 190 190 0 0 1 180.1 11.0 L 183.7 44.9 A 156 156 0 0 0 154.4 50.8 Z" fill="#6D28D9" stroke="#4C1D95" stroke-width="1.5" />
+<text x="165.5" y="33.5" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="8" fill="#FFFFFF">Auto-Crop</text>
+<path d="M 183.4 10.7 A 190 190 0 0 1 216.6 10.7 L 213.6 44.6 A 156 156 0 0 0 186.4 44.6 Z" fill="#6D28D9" stroke="#4C1D95" stroke-width="1.5" />
+<text x="200.0" y="30.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="8" fill="#FFFFFF">Square 1:1</text>
+<path d="M 219.9 11.0 A 190 190 0 0 1 255.6 18.3 L 245.6 50.8 A 156 156 0 0 0 216.3 44.9 Z" fill="#6D28D9" stroke="#4C1D95" stroke-width="1.5" />
+<text x="234.5" y="33.5" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="8" fill="#FFFFFF">16:9 Wide</text>
+<path d="M 156.6 56.4 A 150 150 0 0 1 243.4 56.4 L 219.1 136.8 A 66 66 0 0 0 180.9 136.8 Z" fill="#7C3AED" stroke="#6D28D9" stroke-width="1.5" />
+<text x="200.0" y="94.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#FFFFFF">Crop</text>
+<text x="200.0" y="115.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#E9D5FF">3 Options ▶</text>
+<text x="200.0" y="70.0" text-anchor="middle" font-size="12">✂️</text>
+<path d="M 164.9 57.2 A 147 147 0 0 1 235.1 57.2" stroke="#C4B5FD" stroke-width="3" fill="none" stroke-linecap="round"/>
+<path d="M 249.3 58.3 A 150 150 0 0 1 319.5 109.3 L 252.6 160.1 A 66 66 0 0 0 221.7 137.7 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="264.7" y="115.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">Rotate</text>
+<text x="251.7" y="131.8" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">3 Options ▶</text>
+<text x="278.8" y="95.6" text-anchor="middle" font-size="12">🔄</text>
+<path d="M 323.2 114.4 A 150 150 0 0 1 350.0 196.9 L 266.0 198.6 A 66 66 0 0 0 254.2 162.3 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="304.6" y="170.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">Flip</text>
+<text x="283.7" y="175.8" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Horiz / Vert</text>
+<text x="327.4" y="162.6" text-anchor="middle" font-size="12">↔️</text>
+<path d="M 350.0 203.1 A 150 150 0 0 1 323.2 285.6 L 254.2 237.7 A 66 66 0 0 0 266.0 201.4 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="304.6" y="238.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">Remove BG</text>
+<text x="283.7" y="230.2" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Clear Cut</text>
+<text x="327.4" y="245.4" text-anchor="middle" font-size="12">🪄</text>
+<path d="M 319.5 290.7 A 150 150 0 0 1 249.3 341.7 L 221.7 262.3 A 66 66 0 0 0 252.6 239.9 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="264.7" y="293.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">Grayscale</text>
+<text x="251.7" y="274.2" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Black & White</text>
+<text x="278.8" y="312.4" text-anchor="middle" font-size="12">🎭</text>
+<path d="M 243.4 343.6 A 150 150 0 0 1 156.6 343.6 L 180.9 263.2 A 66 66 0 0 0 219.1 263.2 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="200.0" y="314.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">Live Photo</text>
+<text x="200.0" y="291.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Save as Video</text>
+<text x="200.0" y="338.0" text-anchor="middle" font-size="12">📹</text>
+<path d="M 150.7 341.7 A 150 150 0 0 1 80.5 290.7 L 147.4 239.9 A 66 66 0 0 0 178.3 262.3 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="135.3" y="293.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">AVIF</text>
+<text x="148.3" y="274.2" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Next-Gen Pic</text>
+<text x="121.2" y="312.4" text-anchor="middle" font-size="12">✨</text>
+<path d="M 76.8 285.6 A 150 150 0 0 1 50.0 203.1 L 134.0 201.4 A 66 66 0 0 0 145.8 237.7 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="95.4" y="238.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">GIF</text>
+<text x="116.3" y="230.2" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Animated GIF</text>
+<text x="72.6" y="245.4" text-anchor="middle" font-size="12">🎞</text>
+<path d="M 50.0 196.9 A 150 150 0 0 1 76.8 114.4 L 145.8 162.3 A 66 66 0 0 0 134.0 198.6 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="95.4" y="170.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">Merge PDF</text>
+<text x="116.3" y="175.8" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Combine Files</text>
+<text x="72.6" y="162.6" text-anchor="middle" font-size="12">📑</text>
+<path d="M 80.5 109.3 A 150 150 0 0 1 150.7 58.3 L 178.3 137.7 A 66 66 0 0 0 147.4 160.1 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+<text x="135.3" y="115.0" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11" fill="#1E293B">ZIP Bundle</text>
+<text x="148.3" y="131.8" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="7.5" fill="#64748B">Pack Files</text>
+<text x="121.2" y="95.6" text-anchor="middle" font-size="12">📦</text>
+<circle cx="200" cy="200" r="64" fill="#FFF1F2" stroke="#F43F5E" stroke-width="2" stroke-dasharray="4 3"/>
+<circle cx="200" cy="200" r="50" fill="#FFE4E6"/>
+<text x="200" y="196" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="800" font-size="11" fill="#E11D48">✕ CANCEL</text>
+<text x="200" y="212" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="8.5" fill="#F43F5E">RELEASE HERE</text>
+</svg>
+      <div class="caption">Figure 1.2: The Back Wheel with 3 Expanding Crop Wings</div>
+    </div>
+    <div class="card">
+      <h3><span>🪄</span> Useful 1-Click Utilities</h3>
+      <table>
+        <tr><th>Tool</th><th>Simple Explanation</th></tr>
+        <tr><td><strong>✂️ Crop</strong></td><td>Pops open 3 choices: <em>Auto-Crop</em> (removes empty borders), <em>Square 1:1</em> (Instagram avatar), or <em>16:9</em> (Widescreen).</td></tr>
+        <tr><td><strong>🔄 Rotate</strong></td><td>Rotate 90° Clockwise, Counter-Clockwise, or 180° upside down.</td></tr>
+        <tr><td><strong>↔️ Flip</strong></td><td>Mirror horizontally or flip vertically.</td></tr>
+        <tr><td><strong>🪄 Remove BG</strong></td><td>Erases plain backgrounds automatically so your subject stands out.</td></tr>
+        <tr><td><strong>🎭 Grayscale</strong></td><td>Turns color photos into artistic black &amp; white.</td></tr>
+        <tr><td><strong>📹 Live Photo</strong></td><td>Extracts moving video clips from iPhone Live Photos.</td></tr>
+        <tr><td><strong>✨ AVIF</strong></td><td>The newest ultra-clear photo format for modern phones.</td></tr>
+        <tr><td><strong>🎞 GIF</strong></td><td>Turns short videos into animated web loops.</td></tr>
+        <tr><td><strong>📑 Merge PDF</strong></td><td>Select 2 or more files to combine them into a single PDF book!</td></tr>
+        <tr><td><strong>📦 ZIP Bundle</strong></td><td>Packs selected files into a tidy compressed ZIP folder.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- PAGE 4: INSTANT SPACEBAR PREVIEW (QUICKLOOK)                    -->
+  <!-- ============================================================== -->
+  <div class="page-break"></div>
+
+  <div class="card" style="margin-bottom: 14px;">
+    <h2><span>👀</span> Page 4: Instant Spacebar Preview (Peek Inside Files)</h2>
+    <p style="margin: 0; color: #64748b;">Tired of waiting for heavy programs to open just to check what a file contains? OMNIWHEEL gives Windows the instant spacebar peek you've always wanted.</p>
+  </div>
+
+  <div class="grid-2" style="align-items: center;">
+    <div class="visual-center">
+      
+    <svg width="380" height="235" viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg" style="border-radius: 14px; filter: drop-shadow(0 14px 32px rgba(15,23,42,0.15));">
+      <rect width="520" height="320" rx="14" fill="#1E293B"/>
+      
+      <!-- Title Bar -->
+      <rect width="520" height="40" rx="14" fill="#0F172A"/>
+      <rect y="26" width="520" height="14" fill="#0F172A"/>
+      
+      <circle cx="22" cy="20" r="5.5" fill="#EF4444"/>
+      <circle cx="38" cy="20" r="5.5" fill="#F59E0B"/>
+      <circle cx="54" cy="20" r="5.5" fill="#10B981"/>
+      
+      <text x="260" y="25" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="12" fill="#F1F5F9">mountain_sunset_2026.jpg &bull; 2.4 MB</text>
+      
+      <!-- Canvas -->
+      <rect x="12" y="46" width="496" height="220" rx="8" fill="#020617"/>
+      
+      <defs>
+        <linearGradient id="qlSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#4F46E5"/>
+          <stop offset="50%" stop-color="#EC4899"/>
+          <stop offset="100%" stop-color="#F59E0B"/>
+        </linearGradient>
+      </defs>
+      <rect x="16" y="50" width="488" height="212" rx="6" fill="url(#qlSky)"/>
+      <circle cx="260" cy="135" r="34" fill="#FEF08A" opacity="0.9"/>
+      
+      <polygon points="40,262 160,135 280,262" fill="#312E81" opacity="0.95"/>
+      <polygon points="180,262 310,110 440,262" fill="#1E1B4B" opacity="0.95"/>
+      <polygon points="280,262 390,148 500,262" fill="#0F172A"/>
+      
+      <!-- Resolution chip -->
+      <rect x="175" y="62" width="170" height="24" rx="12" fill="rgba(15, 23, 42, 0.8)" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1"/>
+      <text x="260" y="78" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="10.5" fill="#FFFFFF">3840 &times; 2160 &bull; 4K UHD</text>
+      
+      <!-- Bottom Control Bar -->
+      <rect x="0" y="272" width="520" height="48" rx="14" fill="#0F172A"/>
+      <rect y="272" width="520" height="14" fill="#0F172A"/>
+      
+      <rect x="14" y="280" width="60" height="28" rx="6" fill="#334155"/>
+      <text x="44" y="299" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="14" fill="#FFFFFF">&lsaquo;  &rsaquo;</text>
+      
+      <rect x="366" y="280" width="140" height="28" rx="6" fill="#7C3AED"/>
+      <text x="436" y="298" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="600" font-size="10.5" fill="#FFFFFF">Open with Default App</text>
+      
+      <text x="240" y="298" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="500" font-size="10.5" fill="#94A3B8">Tap Spacebar or Esc to Close</text>
+    </svg>
+    
+      <div class="caption">Figure 3.1: Instant Spacebar Peek &bull; Press Left/Right Arrows to Browse</div>
+    </div>
+    <div>
+      <div class="card">
+        <h3><span>⚡</span> How It Works</h3>
+        <ol style="margin: 0 0 10px 18px; padding: 0; font-size: 8.5pt;">
+          <li style="margin-bottom: 6px;">Click any file in Windows File Explorer.</li>
+          <li style="margin-bottom: 6px;">Tap <span class="keycap">Spacebar</span> once. An instant window floats above everything in less than 50 milliseconds!</li>
+          <li style="margin-bottom: 6px;">Press <span class="keycap">&larr;</span> or <span class="keycap">&rarr;</span> arrow keys on your keyboard to flip through the rest of the files in your folder.</li>
+          <li>Tap <span class="keycap">Spacebar</span> or <span class="keycap">Esc</span> to dismiss.</li>
+        </ol>
+      </div>
+
+      <div class="card" style="margin-top: 10px;">
+        <h3><span>📁</span> What Files Can You Preview?</h3>
+        <ul style="margin: 0 0 0 18px; padding: 0; font-size: 8.5pt; color: #334155;">
+          <li><strong>Photos:</strong> JPG, PNG, WEBP, GIF, SVG, BMP, TIFF, ICO.</li>
+          <li><strong>Documents:</strong> PDF, Word (DOCX), Text (TXT), Markdown (MD).</li>
+          <li><strong>Data:</strong> Spreadsheets (XLSX, CSV, TSV) in a readable table.</li>
+          <li><strong>Music &amp; Video:</strong> MP4, WebM, MP3, WAV with instant playback.</li>
+          <li><strong>ZIP Folders:</strong> View inside ZIP archives without unzipping.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- PAGE 5: INSTALLATION & SIMPLE SHORTCUT REFERENCE               -->
+  <!-- ============================================================== -->
+  <div class="page-break"></div>
+
+  <div class="card" style="margin-bottom: 14px;">
+    <h2><span>💻</span> Page 5: 1-Click Setup &amp; Keyboard Shortcut Cheat Sheet</h2>
+    <p style="margin: 0; color: #64748b;">Everything you need to know in a clean, pocket-sized reference.</p>
+  </div>
+
+  <div class="grid-2" style="align-items: center;">
+    <div class="card">
+      <h3><span>⌨️</span> Shortcut Cheat Sheet</h3>
+      <table>
+        <tr><th>Action</th><th>Shortcut Key</th></tr>
+        <tr><td><strong>Summon Wheel</strong></td><td>Hold <span class="keycap">` (Tilde)</span> or <span class="keycap">Alt</span></td></tr>
+        <tr><td><strong>Execute Action</strong></td><td>Release key over highlighted slice</td></tr>
+        <tr><td><strong>Cancel Action</strong></td><td>Move cursor to center circle &amp; release</td></tr>
+        <tr><td><strong>Flip Wheel Face</strong></td><td>Press <span class="keycap">Tab</span> or Scroll Mouse Wheel</td></tr>
+        <tr><td><strong>QuickLook Preview</strong></td><td>Tap <span class="keycap">Spacebar</span> on any file</td></tr>
+        <tr><td><strong>Browse Next/Prev</strong></td><td>Press <span class="keycap">&larr;</span> or <span class="keycap">&rarr;</span> in QuickLook</td></tr>
+        <tr><td><strong>Close Preview</strong></td><td>Press <span class="keycap">Spacebar</span> or <span class="keycap">Esc</span></td></tr>
+      </table>
+    </div>
+
+    <div class="visual-center">
+      
+    <svg width="320" height="210" viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" style="border-radius: 14px; filter: drop-shadow(0 10px 24px rgba(124,58,237,0.1));">
+      <rect width="320" height="210" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5"/>
+      
+      <rect x="16" y="14" width="288" height="32" rx="6" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+      <text x="160" y="34" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="800" font-size="11" fill="#7C3AED">WELCOME &bull; BIENVENUE &bull; AYUBOWAN</text>
+      
+      <circle cx="44" cy="74" r="18" fill="#7C3AED"/>
+      <circle cx="44" cy="74" r="8" fill="#FFFFFF"/>
+      <text x="74" y="73" font-family="Segoe UI, sans-serif" font-weight="800" font-size="15" fill="#0F172A">OMNIWHEEL 1.0</text>
+      <text x="74" y="87" font-family="Segoe UI, sans-serif" font-weight="500" font-size="10" fill="#64748B">Standalone Automated Setup</text>
+      
+      <text x="24" y="116" font-family="Segoe UI, sans-serif" font-weight="600" font-size="10" fill="#334155">&#10003; Desktop &amp; Start Menu Shortcuts</text>
+      <text x="24" y="134" font-family="Segoe UI, sans-serif" font-weight="600" font-size="10" fill="#334155">&#10003; Explorer Right-Click Context Menu</text>
+      <text x="24" y="152" font-family="Segoe UI, sans-serif" font-weight="600" font-size="10" fill="#334155">&#10003; All Video/Audio/Image Engines Built-In</text>
+      
+      <rect x="16" y="166" width="288" height="32" rx="6" fill="#7C3AED"/>
+      <text x="160" y="186" text-anchor="middle" font-family="Segoe UI, sans-serif" font-weight="700" font-size="11.5" fill="#FFFFFF">Install OMNIWHEEL (Automatic)</text>
+    </svg>
+    
+      <div class="caption">Figure 5.1: 1-Click Automated Setup — Zero Manual Steps</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 6px; background: #f8fafc; border: 1px dashed #cbd5e1; text-align: center; font-size: 8pt; color: #64748b;">
+    <strong>OMNIWHEEL 1.0</strong> &bull; Handcrafted by <strong>ISURU GUNASEKERA</strong> &bull; Free, Private, and Hassle-Free for Windows
+  </div>
+
+  
+<script>
+(function() {
+  const container = document.getElementById('frost-canvas-container');
+  const canvas = document.getElementById('threejs-frost-canvas');
+  const hud = document.getElementById('frost-hover-hud');
+  if (!container || !canvas || typeof THREE === 'undefined') return;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(0, 0, 11);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  scene.add(ambientLight);
+  const pointLight = new THREE.PointLight(0xa855f7, 2.8, 25);
+  pointLight.position.set(4, 5, 8);
+  scene.add(pointLight);
+  const rimLight = new THREE.PointLight(0x38bdf8, 2.0, 20);
+  rimLight.position.set(-5, -4, -4);
+  scene.add(rimLight);
+
+  // Wheel Group
+  const wheelGroup = new THREE.Group();
+  scene.add(wheelGroup);
+
+  // Glass Material
+  let glassMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    metalness: 0.05,
+    roughness: 0.22,
+    transmission: 0.92,
+    ior: 1.52,
+    thickness: 1.8,
+    transparent: true,
+    opacity: 0.92,
+    reflectivity: 0.8
+  });
+
+  let hoverMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0xa855f7,
+    emissive: 0x7c3aed,
+    emissiveIntensity: 0.6,
+    metalness: 0.1,
+    roughness: 0.15,
+    transmission: 0.4,
+    transparent: true,
+    opacity: 0.95
+  });
+
+  const frontSlices = [
+    { title: "PNG", sub: "Convert to PNG", icon: "🖼" },
+    { title: "WEBP", sub: "Web Picture", icon: "🌐" },
+    { title: "PDF", sub: "PDF Document", icon: "📄" },
+    { title: "Trace SVG", sub: "Vector Shape", icon: "📐" },
+    { title: "Line Art", sub: "B&W Outline", icon: "✏️" },
+    { title: "TIFF", sub: "High-Res Print", icon: "🖨" },
+    { title: "BMP", sub: "Bitmap Image", icon: "🎨" },
+    { title: "ICO", sub: "Windows Icon", icon: "⭐" },
+    { title: "Half Size", sub: "50% Smaller", icon: "🔍" }
+  ];
+
+  const sliceMeshes = [];
+  const count = frontSlices.length;
+  const sliceAngle = (Math.PI * 2) / count;
+  const rIn = 1.35;
+  const rOut = 3.6;
+
+  for (let i = 0; i < count; i++) {
+    const aStart = i * sliceAngle - sliceAngle / 2 + 0.02;
+    const aEnd = i * sliceAngle + sliceAngle / 2 - 0.02;
+    
+    const shape = new THREE.Shape();
+    const segs = 18;
+    for (let s = 0; s <= segs; s++) {
+      const a = aStart + (aEnd - aStart) * (s / segs);
+      const x = rOut * Math.cos(a);
+      const y = rOut * Math.sin(a);
+      if (s === 0) shape.moveTo(x, y);
+      else shape.lineTo(x, y);
+    }
+    for (let s = segs; s >= 0; s--) {
+      const a = aStart + (aEnd - aStart) * (s / segs);
+      const x = rIn * Math.cos(a);
+      const y = rIn * Math.sin(a);
+      shape.lineTo(x, y);
+    }
+    shape.closePath();
+
+    const geom = new THREE.ExtrudeGeometry(shape, {
+      depth: 0.28,
+      bevelEnabled: true,
+      bevelSegments: 3,
+      steps: 1,
+      bevelSize: 0.04,
+      bevelThickness: 0.04
+    });
+
+    const mesh = new THREE.Mesh(geom, glassMaterial.clone());
+    mesh.userData = { index: i, slice: frontSlices[i], baseZ: 0 };
+    wheelGroup.add(mesh);
+    sliceMeshes.push(mesh);
+  }
+
+  // Cancel Center Hub
+  const hubShape = new THREE.Shape();
+  hubShape.absarc(0, 0, 1.25, 0, Math.PI * 2, false);
+  const hubGeom = new THREE.ExtrudeGeometry(hubShape, { depth: 0.32, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.04 });
+  const hubMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffe4e6,
+    emissive: 0xf43f5e,
+    emissiveIntensity: 0.25,
+    roughness: 0.3,
+    transmission: 0.85,
+    transparent: true,
+    opacity: 0.95
+  });
+  const hubMesh = new THREE.Mesh(hubGeom, hubMat);
+  hubMesh.position.z = 0.02;
+  wheelGroup.add(hubMesh);
+
+  // Mouse tilt tracking
+  let mouseX = 0, mouseY = 0;
+  let targetTiltX = 0, targetTiltY = 0;
+  let currentTiltX = 0, currentTiltY = 0;
+  let targetRotY = 0;
+  let isBackFace = false;
+
+  const raycaster = new THREE.Raycaster();
+  const mouseNorm = new THREE.Vector2(-100, -100);
+
+  container.addEventListener('mousemove', (e) => {
+    const rect = container.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    mouseNorm.x = (x / rect.width) * 2 - 1;
+    mouseNorm.y = -(y / rect.height) * 2 + 1;
+    targetTiltX = ((y / rect.height) - 0.5) * 0.45;
+    targetTiltY = ((x / rect.width) - 0.5) * 0.55;
+  });
+
+  container.addEventListener('mouseleave', () => {
+    mouseNorm.set(-100, -100);
+    targetTiltX = 0;
+    targetTiltY = 0;
+    if (hud) hud.innerHTML = (isBackFace ? "Back Face: 10 Quick Utilities" : "Front Face: 9 Primary Converters") + " &bull; Move mouse to tilt in 3D";
+  });
+
+  window.toggle3DWheelFace = function() {
+    isBackFace = !isBackFace;
+    targetRotY += Math.PI;
+    if (hud) hud.innerHTML = (isBackFace ? "Back Face: 10 Quick Utilities" : "Front Face: 9 Primary Converters") + " &bull; Rotated 180° in 3D space";
+  };
+
+  window.switch3DTheme = function(btn, name, color, emissive) {
+    document.querySelectorAll('.frost-theme-pill').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    pointLight.color.set(color);
+    hoverMaterial.color.set(color);
+    hoverMaterial.emissive.set(emissive);
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      window.toggle3DWheelFace();
+    }
+  });
+
+  let clock = new THREE.Clock();
+  let hoveredMesh = null;
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const elapsedTime = clock.getElapsedTime();
+
+    // Smooth tilt interpolation & floating
+    wheelGroup.position.y = Math.sin(elapsedTime * 1.5) * 0.10;
+    currentTiltX += (targetTiltX - currentTiltX) * 0.08;
+    currentTiltY += (targetTiltY - currentTiltY) * 0.08;
+    wheelGroup.rotation.x = currentTiltX;
+    wheelGroup.rotation.y += (targetRotY - wheelGroup.rotation.y) * 0.08 + (targetTiltY - wheelGroup.rotation.y) * 0.02;
+
+    // Dynamic 3D flip swoop
+    const rotDiff = Math.abs(targetRotY - wheelGroup.rotation.y);
+    const flipSwoopZ = Math.sin(Math.min(Math.PI, rotDiff)) * 0.65;
+    wheelGroup.position.z = -flipSwoopZ;
+
+    // Raycast hover
+    raycaster.setFromCamera(mouseNorm, camera);
+    const hits = raycaster.intersectObjects(sliceMeshes);
+
+    if (hits.length > 0) {
+      const hit = hits[0].object;
+      if (hoveredMesh !== hit) {
+        if (hoveredMesh) {
+          hoveredMesh.material = glassMaterial;
+        }
+        hoveredMesh = hit;
+        hoveredMesh.material = hoverMaterial;
+        if (hud && hit.userData && hit.userData.slice) {
+          hud.innerHTML = `<strong>Selected:</strong> ${hit.userData.slice.icon} ${hit.userData.slice.title} (${hit.userData.slice.sub})`;
+        }
+      }
+    } else {
+      if (hoveredMesh) {
+        hoveredMesh.material = glassMaterial;
+        hoveredMesh = null;
+      }
+    }
+
+    // Per-slice spring lerp
+    sliceMeshes.forEach(mesh => {
+      const isTarget = (hoveredMesh === mesh);
+      const targetZ = isTarget ? 0.38 : 0.0;
+      const targetScale = isTarget ? 1.04 : 1.0;
+      mesh.position.z += (targetZ - mesh.position.z) * 0.14;
+      const curScale = mesh.scale.x;
+      const newScale = curScale + (targetScale - curScale) * 0.14;
+      mesh.scale.set(newScale, newScale, newScale);
+    });
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  window.addEventListener('resize', () => {
+    if (!container) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <AssemblyName>OMNIWHEEL</AssemblyName>
+    <RootNamespace>LocalConvertNative</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <StartupObject>LocalConvertNative.Program</StartupObject>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.20.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Installer\**" />
+    <Compile Remove="GenerateScreenshots.cs" />
+    <Compile Remove="tests\**" />
+  </ItemGroup>
+
+    <PropertyGroup>
+      <PublishSingleFile>true</PublishSingleFile>
+      <SelfContained>true</SelfContained>
+      <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    </PropertyGroup>
+</Project>

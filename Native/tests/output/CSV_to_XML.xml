@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<records>
+  <record>
+    <Name>Alice</Name>
+    <Age>29</Age>
+    <Role>Engineer</Role>
+  </record>
+  <record>
+    <Name>Bob</Name>
+    <Age>34</Age>
+    <Role>Designer</Role>
+  </record>
+</records>

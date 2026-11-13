@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMNIWHEEL - 3D Frosted Glass Design Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0914;
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-purple: #8b5cf6;
+            --accent-orange: #ff7a00;
+            --glass-bg: rgba(22, 18, 34, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --glass-shadow: 0 24px 48px rgba(0, 0, 0, 0.55);
+            --hud-bg: rgba(18, 14, 28, 0.85);
+        }
+
+        body.light-mode {
+            --bg-color: #f5f2eb;
+            --text-primary: #1e1b28;
+            --text-secondary: #4a433a;
+            --text-muted: #726a5c;
+            --accent-purple: #7c3aed;
+            --accent-orange: #ea580c;
+            --glass-bg: rgba(255, 255, 255, 0.82);
+            --glass-border: rgba(210, 200, 185, 0.65);
+            --glass-shadow: 0 24px 48px rgba(90, 80, 68, 0.22);
+            --hud-bg: rgba(255, 255, 255, 0.92);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            transition: background 0.4s ease, color 0.4s ease;
+        }
+
+        #canvas3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Top Floating Navigation Bar */
+        .glass-navbar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 14px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 999px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .brand-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-right: 12px;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .split-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #ff7a00 0deg 45deg,
+                #7c3aed 45deg 90deg,
+                #ff7a00 90deg 135deg,
+                #7c3aed 135deg 180deg,
+                #ff7a00 180deg 225deg,
+                #7c3aed 225deg 270deg,
+                #ff7a00 270deg 315deg,
+                #7c3aed 315deg 360deg
+            );
+            box-shadow: 0 0 14px rgba(255, 122, 0, 0.45), 0 0 14px rgba(124, 58, 237, 0.45);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #c4b5fd 0%, #ffedd5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        body.light-mode .brand-title {
+            background: linear-gradient(135deg, #6b21a8 0%, #c2410c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .window-dock {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dock-pill {
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 6px 14px;
+            border-radius: 999px;
+            color: var(--text-secondary);
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dock-pill:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .dock-pill.active {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.35) 0%, rgba(255, 122, 0, 0.35) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            box-shadow: 0 4px 16px rgba(124, 58, 237, 0.25);
+        }
+        body.light-mode .dock-pill.active {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(255, 122, 0, 0.15) 100%);
+            color: #1e1b28;
+            border: 1px solid rgba(124, 58, 237, 0.4);
+        }
+
+        .dock-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 12px;
+            border-left: 1px solid var(--glass-border);
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.08);
+        }
+
+        /* Bottom Floating Inspection HUD */
+        .glass-hud {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: var(--hud-bg);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 14px 22px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            min-width: 480px;
+            max-width: 680px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .hud-icon-gem {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(255, 122, 0, 0.25) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .hud-meta {
+            flex: 1;
+        }
+
+        .hud-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-badge {
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: linear-gradient(135deg, #7c3aed 0%, #ff7a00 100%);
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hud-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .hud-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .hud-action-btn {
+            background: linear-gradient(135deg, #7c3aed 0%, #ff7a00 100%);
+            border: none;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(255, 122, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .hud-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(255, 122, 0, 0.45);
+        }
+
+        /* Top-Right Info & Guide Callout */
+        .info-pill-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .guide-btn {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 8px 16px;
+            border-radius: 999px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--glass-shadow);
+            transition: all 0.2s ease;
+        }
+
+        .guide-btn:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Instructions Hint */
+        .hint-badge {
+            font-size: 11px;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px 10px;
+            border-radius: 999px;
+            backdrop-filter: blur(8px);
+        }
+        body.light-mode .hint-badge {
+            background: rgba(255, 255, 255, 0.6);
+        }
+    </style>
+    <!-- Three.js r128 and OrbitControls via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <canvas id="canvas3d"></canvas>
+
+    <!-- Top Navigation Dock -->
+    <nav class="glass-navbar">
+        <div class="brand-badge">
+            <span class="split-icon"></span>
+            <span class="brand-title">OMNIWHEEL 3D</span>
+        </div>
+
+        <div class="window-dock">
+            <button class="dock-pill active" id="pillWheel" onclick="switchWindowView('wheel')">
+                <span>🛞</span> Radial Donut
+            </button>
+            <button class="dock-pill" id="pillQuickLook" onclick="switchWindowView('quicklook')">
+                <span>👁️</span> QuickLook Peek
+            </button>
+            <button class="dock-pill" id="pillSettings" onclick="switchWindowView('settings')">
+                <span>⚙️</span> Settings Console
+            </button>
+            <button class="dock-pill" id="pillAll" onclick="switchWindowView('all')">
+                <span>🌐</span> 3D Studio (All)
+            </button>
+        </div>
+
+        <div class="dock-actions">
+            <button class="icon-btn" id="btnTheme" title="Toggle Dark/Light Mode" onclick="toggleThemeMode()">🌙</button>
+            <button class="icon-btn" id="btnFlip" title="Flip Wheel Layer (Tab)" onclick="triggerWheelFlip()">🔄</button>
+        </div>
+    </nav>
+
+    <!-- Top-Right User Guide Pill -->
+    <div class="info-pill-container">
+        <a href="OMNIWHEEL_BY_ISURU_User_Guide.pdf" target="_blank" class="guide-btn">
+            <span>📑</span> Open User Guide (PDF)
+        </a>
+        <div class="hint-badge">Drag to orbit • Scroll to zoom • Tab to flip</div>
+    </div>
+
+    <!-- Bottom Contextual Inspection HUD -->
+    <div class="glass-hud" id="hud">
+        <div class="hud-icon-gem" id="hudIcon">🛞</div>
+        <div class="hud-meta">
+            <div class="hud-title">
+                <span id="hudTitle">Radial Donut Wheel</span>
+                <span class="hud-badge" id="hudBadge">Hardware DirectX</span>
+            </div>
+            <div class="hud-desc" id="hudDesc">
+                Dual-Face physical frosted glass architecture. Left hemisphere Royal Purple, right Bright Orange. Hover any wedge to extrude in 3D.
+            </div>
+        </div>
+        <div class="hud-controls">
+            <button class="hud-action-btn" id="hudActionBtn" onclick="triggerPrimaryAction()">Interact</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==============================================================================
+            // OMNIWHEEL 3D FROSTED GLASS MASTER ENGINE
+            // Built with Three.js Physical Transmission, Refraction & Dynamic Lighting
+            // ==============================================================================
+            const canvas = document.getElementById('canvas3d');
+            const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.15;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 8.4);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.maxDistance = 18;
+            controls.minDistance = 3.5;
+
+            // --------------------------------------------------------------------------
+            // 1. Studio Lighting System (Dual Purple / Orange Core Illumination)
+            // --------------------------------------------------------------------------
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+            scene.add(ambientLight);
+
+            // Left Key Light (Royal Purple)
+            const purpleLight = new THREE.PointLight(0x9333ea, 2.8, 20);
+            purpleLight.position.set(-5, 4, 4);
+            scene.add(purpleLight);
+
+            // Right Rim Light (Electric Bright Orange)
+            const orangeLight = new THREE.PointLight(0xff7a00, 2.8, 20);
+            orangeLight.position.set(5, -3, 4);
+            scene.add(orangeLight);
+
+            // Top White Specular Light
+            const topSpot = new THREE.SpotLight(0xffffff, 1.8, 30, Math.PI / 4, 0.4);
+            topSpot.position.set(0, 8, 7);
+            topSpot.castShadow = true;
+            scene.add(topSpot);
+
+            // --------------------------------------------------------------------------
+            // 2. Physical Frosted Glass Materials
+            // --------------------------------------------------------------------------
+            const glassMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff,
+                metalness: 0.05,
+                roughness: 0.16,
+                transmission: 0.94,
+                ior: 1.52,
+                thickness: 0.55,
+                specularIntensity: 1.0,
+                clearcoat: 0.5,
+                clearcoatRoughness: 0.1,
+                transparent: true,
+                opacity: 0.88
+            });
+
+            const purpleGlass = new THREE.MeshPhysicalMaterial({
+                color: 0x7c3aed,
+                emissive: 0x4c1d95,
+                emissiveIntensity: 0.45,
+                metalness: 0.15,
+                roughness: 0.22,
+                transmission: 0.75,
+                ior: 1.48,
+                thickness: 0.6
+            });
+
+            const orangeGlass = new THREE.MeshPhysicalMaterial({
+                color: 0xff7a00,
+                emissive: 0xc2410c,
+                emissiveIntensity: 0.45,
+                metalness: 0.15,
+                roughness: 0.22,
+                transmission: 0.75,
+                ior: 1.48,
+                thickness: 0.6
+            });
+
+            const hoverMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xffa500,
+                emissive: 0xff7a00,
+                emissiveIntensity: 0.85,
+                metalness: 0.2,
+                roughness: 0.12,
+                transmission: 0.82,
+                ior: 1.55
+            });
+
+            const darkCardMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0x1e192c,
+                metalness: 0.2,
+                roughness: 0.28,
+                transmission: 0.65,
+                thickness: 0.8,
+                clearcoat: 0.4
+            });
+
+            // --------------------------------------------------------------------------
+            // 3. WINDOW 1: The Radial Donut Wheel (Dual-Face Architecture)
+            // --------------------------------------------------------------------------
+            const wheelRoot = new THREE.Group();
+            scene.add(wheelRoot);
+
+            const frontWedgesData = [
+                { id: "png", label: "PNG", sub: "Lossless", icon: "🖼️", angle: 0 },
+                { id: "webp", label: "WEBP", sub: "Web Ultra", icon: "🌐", angle: 40 },
+                { id: "pdf", label: "PDF", sub: "Document", icon: "📄", angle: 80 },
+                { id: "svg-color", label: "SVG", sub: "Color Trace", icon: "📐", angle: 120 },
+                { id: "svg-bw", label: "SVG B&W", sub: "Line Art", icon: "✏️", angle: 160 },
+                { id: "tiff", label: "TIFF", sub: "Archival", icon: "🗄️", angle: 200 },
+                { id: "bmp", label: "BMP", sub: "Raw Pixels", icon: "🧱", angle: 240 },
+                { id: "ico", label: "ICO", sub: "App Icon", icon: "⭐", angle: 280 },
+                { id: "half-size", label: "1/2 Size", sub: "Fast 50%", icon: "⚡", angle: 320 }
+            ];
+
+            const sliceMeshes = [];
+
+            // Helper to generate arc wedges
+            function createDonutWedgeGeometry(innerR, outerR, startDeg, endDeg, depth = 0.28) {
+                const shape = new THREE.Shape();
+                const startRad = (startDeg - 90) * Math.PI / 180;
+                const endRad = (endDeg - 90) * Math.PI / 180;
+
+                const segments = 24;
+                for (let i = 0; i <= segments; i++) {
+                    const t = startRad + (endRad - startRad) * (i / segments);
+                    const x = outerR * Math.cos(t);
+                    const y = outerR * Math.sin(t);
+                    if (i === 0) shape.moveTo(x, y);
+                    else shape.lineTo(x, y);
+                }
+
+                for (let i = segments; i >= 0; i--) {
+                    const t = startRad + (endRad - startRad) * (i / segments);
+                    const x = innerR * Math.cos(t);
+                    const y = innerR * Math.sin(t);
+                    shape.lineTo(x, y);
+                }
+                shape.closePath();
+
+                return new THREE.ExtrudeGeometry(shape, {
+                    depth: depth,
+                    bevelEnabled: true,
+                    bevelSegments: 4,
+                    steps: 1,
+                    bevelSize: 0.03,
+                    bevelThickness: 0.03
+                });
+            }
+
+            // Create 9 Radial Wedges
+            frontWedgesData.forEach((w) => {
+                const geom = createDonutWedgeGeometry(1.2, 2.5, w.angle - 18, w.angle + 18, 0.22);
+                geom.center();
+                const mesh = new THREE.Mesh(geom, glassMaterial.clone());
+
+                const rad = (w.angle - 90) * Math.PI / 180;
+                const r = 1.85;
+                mesh.position.set(r * Math.cos(rad), -r * Math.sin(rad), 0);
+                mesh.userData = { wedge: w, basePos: mesh.position.clone() };
+
+                wheelRoot.add(mesh);
+                sliceMeshes.push(mesh);
+            });
+
+            // Center Hub: Split Royal Purple (left) & Bright Orange (right)
+            const hubGroup = new THREE.Group();
+
+            const leftHalfGeom = new THREE.CylinderGeometry(1.12, 1.12, 0.35, 32, 1, false, Math.PI / 2, Math.PI);
+            leftHalfGeom.rotateX(Math.PI / 2);
+            const leftHubMesh = new THREE.Mesh(leftHalfGeom, purpleGlass);
+            hubGroup.add(leftHubMesh);
+
+            const rightHalfGeom = new THREE.CylinderGeometry(1.12, 1.12, 0.35, 32, 1, false, -Math.PI / 2, Math.PI);
+            rightHalfGeom.rotateX(Math.PI / 2);
+            const rightHubMesh = new THREE.Mesh(rightHalfGeom, orangeGlass);
+            hubGroup.add(rightHubMesh);
+
+            // Center glowing laser seam
+            const seamGeom = new THREE.BoxGeometry(0.04, 2.26, 0.38);
+            const seamMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const seamMesh = new THREE.Mesh(seamGeom, seamMat);
+            hubGroup.add(seamMesh);
+
+            // Metallic Bezel Outer Rim
+            const hubRimGeom = new THREE.TorusGeometry(1.14, 0.05, 16, 64);
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.2 });
+            const rimMesh = new THREE.Mesh(hubRimGeom, rimMat);
+            hubGroup.add(rimMesh);
+
+            hubGroup.userData = { isHub: true };
+            wheelRoot.add(hubGroup);
+            sliceMeshes.push(hubGroup);
+
+            // --------------------------------------------------------------------------
+            // 4. WINDOW 2: QuickLook Spacebar Peek 3D Window Card
+            // --------------------------------------------------------------------------
+            const quicklookRoot = new THREE.Group();
+            quicklookRoot.position.set(7.2, 0, -1.5);
+            scene.add(quicklookRoot);
+
+            // Card Body (Frosted Acrylic rounded card)
+            const cardShape = new THREE.Shape();
+            const cardW = 4.4, cardH = 3.2, rad = 0.22;
+            cardShape.moveTo(-cardW/2 + rad, -cardH/2);
+            cardShape.lineTo(cardW/2 - rad, -cardH/2);
+            cardShape.quadraticCurveTo(cardW/2, -cardH/2, cardW/2, -cardH/2 + rad);
+            cardShape.lineTo(cardW/2, cardH/2 - rad);
+            cardShape.quadraticCurveTo(cardW/2, cardH/2, cardW/2 - rad, cardH/2);
+            cardShape.lineTo(-cardW/2 + rad, cardH/2);
+            cardShape.quadraticCurveTo(-cardW/2, cardH/2, -cardW/2, cardH/2 - rad);
+            cardShape.lineTo(-cardW/2, -cardH/2 + rad);
+            cardShape.quadraticCurveTo(-cardW/2, -cardH/2, -cardW/2 + rad, -cardH/2);
+
+            const cardGeom = new THREE.ExtrudeGeometry(cardShape, { depth: 0.15, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.03, bevelThickness: 0.03 });
+            const qlCardMesh = new THREE.Mesh(cardGeom, darkCardMaterial);
+            quicklookRoot.add(qlCardMesh);
+
+            // QuickLook Header Bar (Split purple/orange badge)
+            const headerGeom = new THREE.BoxGeometry(4.2, 0.44, 0.18);
+            const headerMat = new THREE.MeshPhysicalMaterial({ color: 0x2e273e, metalness: 0.1, roughness: 0.3 });
+            const headerMesh = new THREE.Mesh(headerGeom, headerMat);
+            headerMesh.position.set(0, 1.3, 0.08);
+            quicklookRoot.add(headerMesh);
+
+            // Rotating 3D Vinyl Disc inside Viewport (Audio Preview)
+            const vinylGeom = new THREE.CylinderGeometry(0.9, 0.9, 0.04, 48);
+            vinylGeom.rotateX(Math.PI / 2);
+            const vinylMat = new THREE.MeshStandardMaterial({ color: 0x0f0c18, roughness: 0.4, metalness: 0.8 });
+            const vinylMesh = new THREE.Mesh(vinylGeom, vinylMat);
+            vinylMesh.position.set(0, -0.15, 0.15);
+
+            // Center Label on vinyl (Orange & Purple)
+            const labelGeom = new THREE.CylinderGeometry(0.35, 0.35, 0.045, 32);
+            labelGeom.rotateX(Math.PI / 2);
+            const labelMat = new THREE.MeshBasicMaterial({ color: 0xff7a00 });
+            const labelMesh = new THREE.Mesh(labelGeom, labelMat);
+            vinylMesh.add(labelMesh);
+            quicklookRoot.add(vinylMesh);
+
+            // Playback Seek Bar
+            const seekTrackGeom = new THREE.BoxGeometry(3.6, 0.06, 0.02);
+            const seekTrackMat = new THREE.MeshBasicMaterial({ color: 0x475569 });
+            const seekTrack = new THREE.Mesh(seekTrackGeom, seekTrackMat);
+            seekTrack.position.set(0, -1.2, 0.16);
+            quicklookRoot.add(seekTrack);
+
+            const seekProgressGeom = new THREE.BoxGeometry(1.6, 0.065, 0.025);
+            const seekProgressMat = new THREE.MeshBasicMaterial({ color: 0xff7a00 });
+            const seekProgress = new THREE.Mesh(seekProgressGeom, seekProgressMat);
+            seekProgress.position.set(-1.0, -1.2, 0.165);
+            quicklookRoot.add(seekProgress);
+
+            // --------------------------------------------------------------------------
+            // 5. WINDOW 3: Conversion Studio & Settings Deck Console
+            // --------------------------------------------------------------------------
+            const settingsRoot = new THREE.Group();
+            settingsRoot.position.set(-7.2, 0, -1.5);
+            scene.add(settingsRoot);
+
+            // Machined Deck Console
+            const consoleGeom = new THREE.BoxGeometry(4.2, 3.4, 0.35);
+            const consoleMat = new THREE.MeshPhysicalMaterial({ color: 0x1b1828, metalness: 0.3, roughness: 0.35 });
+            const consoleMesh = new THREE.Mesh(consoleGeom, consoleMat);
+            settingsRoot.add(consoleMesh);
+
+            // 3D Tactile Rocker Switch (Dark / Light Mode)
+            const rockerGroup = new THREE.Group();
+            rockerGroup.position.set(0, 0.85, 0.22);
+
+            const rockerBaseGeom = new THREE.BoxGeometry(2.4, 0.45, 0.08);
+            const rockerBaseMat = new THREE.MeshStandardMaterial({ color: 0x0f0d1a, roughness: 0.6 });
+            const rockerBase = new THREE.Mesh(rockerBaseGeom, rockerBaseMat);
+            rockerGroup.add(rockerBase);
+
+            const rockerKnobGeom = new THREE.BoxGeometry(1.15, 0.42, 0.14);
+            const rockerKnobMat = new THREE.MeshPhysicalMaterial({ color: 0x7c3aed, emissive: 0x7c3aed, emissiveIntensity: 0.4 });
+            const rockerKnob = new THREE.Mesh(rockerKnobGeom, rockerKnobMat);
+            rockerKnob.position.set(-0.58, 0, 0.04);
+            rockerGroup.add(rockerKnob);
+            settingsRoot.add(rockerGroup);
+
+            // Concentric Rotary Quality Dial (Dieter Rams Style)
+            const dialGeom = new THREE.CylinderGeometry(0.65, 0.72, 0.28, 48);
+            dialGeom.rotateX(Math.PI / 2);
+            const dialMat = new THREE.MeshStandardMaterial({ color: 0x332e44, metalness: 0.75, roughness: 0.25 });
+            const dialMesh = new THREE.Mesh(dialGeom, dialMat);
+            dialMesh.position.set(0, -0.4, 0.25);
+
+            // Dial Indicator Pip (Bright Orange)
+            const pipGeom = new THREE.BoxGeometry(0.04, 0.28, 0.3);
+            const pipMat = new THREE.MeshBasicMaterial({ color: 0xff7a00 });
+            const pipMesh = new THREE.Mesh(pipGeom, pipMat);
+            pipMesh.position.set(0, 0.35, 0.08);
+            dialMesh.add(pipMesh);
+            settingsRoot.add(dialMesh);
+
+            // --------------------------------------------------------------------------
+            // 6. Atmospheric Floating Dust / Star Constellation
+            // --------------------------------------------------------------------------
+            const particleCount = 200;
+            const posArray = new Float32Array(particleCount * 3);
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                posArray[i] = (Math.random() - 0.5) * 24;
+                posArray[i + 1] = (Math.random() - 0.5) * 24;
+                posArray[i + 2] = (Math.random() - 0.5) * 16;
+            }
+            const particleGeom = new THREE.BufferGeometry();
+            particleGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particleMat = new THREE.PointsMaterial({ size: 0.045, color: 0xc4b5fd, transparent: true, opacity: 0.5 });
+            const particles = new THREE.Points(particleGeom, particleMat);
+            scene.add(particles);
+
+            // --------------------------------------------------------------------------
+            // 7. Interactive State & Smooth Camera Director
+            // --------------------------------------------------------------------------
+            let currentWindowMode = 'wheel';
+            let targetCameraPos = new THREE.Vector3(0, 0, 8.4);
+            let targetControlsTarget = new THREE.Vector3(0, 0, 0);
+
+            let isBackFace = false;
+            let targetWheelRotY = 0;
+            let hoveredSlice = null;
+
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2(-100, -100);
+
+            // Window view switcher
+            window.switchWindowView = function(mode) {
+                currentWindowMode = mode;
+                document.querySelectorAll('.dock-pill').forEach(p => p.classList.remove('active'));
+
+                const hud = document.getElementById('hud');
+                const hudTitle = document.getElementById('hudTitle');
+                const hudBadge = document.getElementById('hudBadge');
+                const hudDesc = document.getElementById('hudDesc');
+                const hudIcon = document.getElementById('hudIcon');
+
+                if (mode === 'wheel') {
+                    document.getElementById('pillWheel').classList.add('active');
+                    targetCameraPos.set(0, 0, 8.4);
+                    targetControlsTarget.set(0, 0, 0);
+                    hudIcon.textContent = "🛞";
+                    hudTitle.textContent = "Radial Donut Wheel";
+                    hudBadge.textContent = "Hardware DirectX";
+                    hudDesc.textContent = "Dual-Face physical frosted glass architecture. Left hemisphere Royal Purple, right Bright Orange. Hover any wedge to extrude in 3D.";
+                } else if (mode === 'quicklook') {
+                    document.getElementById('pillQuickLook').classList.add('active');
+                    targetCameraPos.set(7.2, 0, 6.2);
+                    targetControlsTarget.set(7.2, 0, 0);
+                    hudIcon.textContent = "👁️";
+                    hudTitle.textContent = "QuickLook Spacebar Peek";
+                    hudBadge.textContent = "Sub-50ms Preview";
+                    hudDesc.textContent = "Instant frosted acrylic card with vinyl media playback, OpenXML document parsing, and syntax-highlighted code gutter.";
+                } else if (mode === 'settings') {
+                    document.getElementById('pillSettings').classList.add('active');
+                    targetCameraPos.set(-7.2, 0, 6.2);
+                    targetControlsTarget.set(-7.2, 0, 0);
+                    hudIcon.textContent = "⚙️";
+                    hudTitle.textContent = "Settings & Conversion Console";
+                    hudBadge.textContent = "Skeuomorphic Deck";
+                    hudDesc.textContent = "Hardware tactile rocker switches for Dark/Light mode, rotary quality dials, and 15 Curd Design System themes.";
+                } else if (mode === 'all') {
+                    document.getElementById('pillAll').classList.add('active');
+                    targetCameraPos.set(0, 4.2, 14.5);
+                    targetControlsTarget.set(0, 0, -0.5);
+                    hudIcon.textContent = "🌐";
+                    hudTitle.textContent = "3D Multi-Window Studio";
+                    hudBadge.textContent = "Complete Suite";
+                    hudDesc.textContent = "Seamless spatial coordination between Radial Donut, QuickLook Spacebar Peek, and Settings Console in real-time WebGL.";
+                }
+            };
+
+            // Wheel flip (<kbd>Tab</kbd>)
+            window.triggerWheelFlip = function() {
+                isBackFace = !isBackFace;
+                targetWheelRotY += Math.PI;
+                const hudBadge = document.getElementById('hudBadge');
+                if (hudBadge) {
+                    hudBadge.textContent = isBackFace ? "Wheel 2: Creative Tools" : "Wheel 1: Formats";
+                }
+            };
+
+            // Dark / Light Mode Toggle
+            window.toggleThemeMode = function() {
+                document.body.classList.toggle('light-mode');
+                const isLight = document.body.classList.contains('light-mode');
+                document.getElementById('btnTheme').textContent = isLight ? "☀️" : "🌙";
+
+                // Adjust Three.js lighting & backgrounds
+                if (isLight) {
+                    scene.background = null;
+                    ambientLight.intensity = 1.1;
+                    purpleLight.intensity = 1.8;
+                    orangeLight.intensity = 1.8;
+                    topSpot.intensity = 2.4;
+                    glassMaterial.roughness = 0.22;
+                    glassMaterial.opacity = 0.94;
+                    darkCardMaterial.color.setHex(0xf3eee3);
+                } else {
+                    scene.background = null;
+                    ambientLight.intensity = 0.65;
+                    purpleLight.intensity = 2.8;
+                    orangeLight.intensity = 2.8;
+                    topSpot.intensity = 1.8;
+                    glassMaterial.roughness = 0.16;
+                    glassMaterial.opacity = 0.88;
+                    darkCardMaterial.color.setHex(0x1e192c);
+                }
+            };
+
+            window.triggerPrimaryAction = function() {
+                if (currentWindowMode === 'wheel') triggerWheelFlip();
+                else if (currentWindowMode === 'quicklook') vinylMesh.rotation.z += 1.5;
+                else dialMesh.rotation.z += 0.45;
+            };
+
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    triggerWheelFlip();
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    switchWindowView(currentWindowMode === 'quicklook' ? 'wheel' : 'quicklook');
+                }
+            });
+
+            // --------------------------------------------------------------------------
+            // 8. 60 FPS Render & Animation Loop
+            // --------------------------------------------------------------------------
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const dt = clock.getDelta();
+                const elapsedTime = clock.getElapsedTime();
+
+                // Smooth Camera Director Lerp
+                camera.position.lerp(targetCameraPos, 0.08);
+                controls.target.lerp(targetControlsTarget, 0.08);
+                controls.update();
+
+                // Organic sinusoidal breathing
+                wheelRoot.position.y = Math.sin(elapsedTime * 1.5) * 0.12;
+                quicklookRoot.position.y = Math.sin(elapsedTime * 1.4 + 1.2) * 0.08;
+                settingsRoot.position.y = Math.sin(elapsedTime * 1.4 + 2.4) * 0.08;
+
+                // 3D Flip Swoop on Wheel
+                wheelRoot.rotation.y += (targetWheelRotY - wheelRoot.rotation.y) * 0.10;
+                const rotDiff = Math.abs(targetWheelRotY - wheelRoot.rotation.y);
+                const flipSwoopZ = Math.sin(Math.min(Math.PI, rotDiff)) * 0.85;
+                wheelRoot.position.z = -flipSwoopZ;
+
+                // Subtle Vinyl Disc Rotation
+                vinylMesh.rotation.z += dt * 0.95;
+
+                // Particle drift
+                particles.rotation.y = elapsedTime * 0.03;
+                particles.rotation.x = Math.sin(elapsedTime * 0.02) * 0.04;
+
+                // Raycast Wedge Hover
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(sliceMeshes);
+
+                if (intersects.length > 0 && currentWindowMode === 'wheel') {
+                    const hit = intersects[0].object;
+                    if (hoveredSlice !== hit) {
+                        if (hoveredSlice && !hoveredSlice.userData.isHub) {
+                            hoveredSlice.material = glassMaterial;
+                        }
+                        hoveredSlice = hit;
+                        if (!hit.userData.isHub) {
+                            hit.material = hoverMaterial;
+                        }
+                        if (hit.userData.wedge) {
+                            document.getElementById('hudIcon').textContent = hit.userData.wedge.icon;
+                            document.getElementById('hudTitle').textContent = hit.userData.wedge.label;
+                            document.getElementById('hudBadge').textContent = hit.userData.wedge.sub;
+                            document.getElementById('hudDesc').textContent = `High-speed DirectX converter target for ${hit.userData.wedge.label}. Sub-millisecond pipeline.`;
+                        }
+                    }
+                } else {
+                    if (hoveredSlice) {
+                        if (!hoveredSlice.userData.isHub) {
+                            hoveredSlice.material = glassMaterial;
+                        }
+                        hoveredSlice = null;
+                    }
+                }
+
+                // Spring lerp elevation & scale per slice
+                sliceMeshes.forEach(mesh => {
+                    if (mesh.userData.isHub) return;
+                    const isTarget = (hoveredSlice === mesh);
+                    const targetZ = isTarget ? 0.38 : 0.0;
+                    const targetScale = isTarget ? 1.04 : 1.0;
+
+                    mesh.position.z += (targetZ - mesh.position.z) * 0.14;
+                    const curScale = mesh.scale.x;
+                    const newScale = curScale + (targetScale - curScale) * 0.14;
+                    mesh.scale.set(newScale, newScale, newScale);
+                });
+
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        })();
+    </script>
+</body>
+</html>

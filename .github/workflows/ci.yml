@@ -1,0 +1,35 @@
+﻿name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Native/LocalConvertNative.sln
+
+      - name: Build solution
+        run: dotnet build Native/LocalConvertNative.sln --configuration Release --no-restore
+
+      - name: Run tests with coverage
+        run: |
+          dotnet test Native/LocalConvertNative.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
+        with:
+          files: "**/coverage.cobertura.xml"
