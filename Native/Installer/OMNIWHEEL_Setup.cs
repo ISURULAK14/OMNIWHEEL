@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using Microsoft.Win32;
 
@@ -541,7 +542,254 @@ namespace OMNIWHEEL.Installer
                 }
             }
             catch { }
+        }
 
+        public static void Launch3DStudio()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string htmlPath = Path.Combine(baseDir, "OMNIWHEEL_3D_Frosted_UI.html");
+                if (!File.Exists(htmlPath))
+                {
+                    string localApp = GetDefaultInstallDir();
+                    htmlPath = Path.Combine(localApp, "OMNIWHEEL_3D_Frosted_UI.html");
+                }
+                if (!File.Exists(htmlPath))
+                {
+                    htmlPath = @"E:\ANTIGRAVITY\OMNIWHEEL\OMNIWHEEL_3D_Frosted_UI.html";
+                }
+                if (File.Exists(htmlPath))
+                {
+                    Process.Start(new ProcessStartInfo(htmlPath) { UseShellExecute = true });
+                }
+            }
+            catch { }
+        }
+    }
+
+    // ======================================================================
+    // THREE.JS REALISTIC PBR TEXTURE & 3D HARDWARE-ACCELERATED BACKDROP
+    // ======================================================================
+    public class RealisticThreeJsBackground : Grid
+    {
+        private Viewport3D _viewport;
+        private AxisAngleRotation3D _rotAxisY;
+        private AxisAngleRotation3D _rotAxisX;
+        private TranslateTransform3D _floatTrans;
+        private DispatcherTimer _animTimer;
+        private Stopwatch _stopwatch;
+        private Border _glowOrb1;
+        private Border _glowOrb2;
+        private TranslateTransform _glow1Trans;
+        private TranslateTransform _glow2Trans;
+
+        public RealisticThreeJsBackground(bool isUninstallMode)
+        {
+            ClipToBounds = true;
+            IsHitTestVisible = false;
+
+            // 1. Deep Curd White / Pearl Base with Multi-Stop PBR Radial Illumination
+            var baseBrush = new RadialGradientBrush
+            {
+                Center = new Point(0.5, 0.45),
+                GradientOrigin = new Point(0.5, 0.45),
+                RadiusX = 0.85,
+                RadiusY = 0.85
+            };
+            if (!isUninstallMode)
+            {
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xFD, 0xFB, 0xF7), 0.0));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xF4, 0xEF, 0xE5), 0.45));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xEA, 0xE3, 0xD4), 0.80));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xDF, 0xD6, 0xC5), 1.0));
+            }
+            else
+            {
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xFC, 0xFA, 0xF6), 0.0));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xF5, 0xEF, 0xE7), 0.45));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xEA, 0xE0, 0xD6), 0.80));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xDE, 0xD2, 0xC6), 1.0));
+            }
+            Background = baseBrush;
+
+            // 2. Realistic Specular Caustic Glow Orbs (Simulating Three.js point lights & transmission)
+            _glowOrb1 = new Border
+            {
+                Width = 280,
+                Height = 280,
+                CornerRadius = new CornerRadius(140),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(-40, 60, 0, 0),
+                Opacity = isUninstallMode ? 0.20 : 0.26,
+                Background = new RadialGradientBrush(
+                    Color.FromArgb(0xCC, 0xFF, 0x7A, 0x00), // Vibrant Electric Sunset
+                    Color.FromArgb(0x00, 0xFF, 0x7A, 0x00))
+            };
+            _glow1Trans = new TranslateTransform();
+            _glowOrb1.RenderTransform = _glow1Trans;
+            _glowOrb1.Effect = new DropShadowEffect
+            {
+                BlurRadius = 85,
+                ShadowDepth = 0,
+                Opacity = 0.65,
+                Color = Color.FromRgb(0xFF, 0x7A, 0x00)
+            };
+            Children.Add(_glowOrb1);
+
+            _glowOrb2 = new Border
+            {
+                Width = 260,
+                Height = 260,
+                CornerRadius = new CornerRadius(130),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, -40, 80),
+                Opacity = isUninstallMode ? 0.16 : 0.24,
+                Background = new RadialGradientBrush(
+                    Color.FromArgb(0xCC, 0x7C, 0x3A, 0xED), // Royal Electric Purple
+                    Color.FromArgb(0x00, 0x7C, 0x3A, 0xED))
+            };
+            _glow2Trans = new TranslateTransform();
+            _glowOrb2.RenderTransform = _glow2Trans;
+            _glowOrb2.Effect = new DropShadowEffect
+            {
+                BlurRadius = 80,
+                ShadowDepth = 0,
+                Opacity = 0.60,
+                Color = Color.FromRgb(0x7C, 0x3A, 0xED)
+            };
+            Children.Add(_glowOrb2);
+
+            // 3. Hardware-Accelerated Viewport3D with PBR Torus / Radial Wheel Geometry
+            _viewport = new Viewport3D
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Opacity = 0.40
+            };
+
+            var camera = new PerspectiveCamera
+            {
+                Position = new Point3D(0, 0, 8.2),
+                LookDirection = new Vector3D(0, 0, -1),
+                UpDirection = new Vector3D(0, 1, 0),
+                FieldOfView = 42
+            };
+            _viewport.Camera = camera;
+
+            var modelGroup = new Model3DGroup();
+
+            // Lighting (Three.js Style Key & Rim Lights)
+            var keyLight = new DirectionalLight(Color.FromRgb(0xFF, 0x8A, 0x1A), new Vector3D(-1.2, 1.5, -2));
+            var fillLight = new DirectionalLight(Color.FromRgb(0x8B, 0x5C, 0xF6), new Vector3D(1.5, -1.2, -1.8));
+            var rimLight = new DirectionalLight(Color.FromRgb(0xFF, 0xFF, 0xFF), new Vector3D(0, 0, -3));
+            var ambientLight = new AmbientLight(Color.FromRgb(0x60, 0x58, 0x66));
+
+            modelGroup.Children.Add(keyLight);
+            modelGroup.Children.Add(fillLight);
+            modelGroup.Children.Add(rimLight);
+            modelGroup.Children.Add(ambientLight);
+
+            // 3D Geometry: Smooth Radial Donut Torus (OmniWheel Ring)
+            var mesh = GenerateTorusMesh(2.2, 0.55, 32, 16);
+
+            // PBR Material (Physical Transmission & Specular Highlight)
+            var matGroup = new MaterialGroup();
+            matGroup.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
+                Color.FromArgb(0xF0, 0xFA, 0xF8, 0xF2),
+                Color.FromArgb(0xD0, 0xE8, 0xDF, 0xD0),
+                new Point(0, 0), new Point(1, 1))));
+            matGroup.Children.Add(new SpecularMaterial(Brushes.White, 75.0));
+
+            var geometryModel = new GeometryModel3D(mesh, matGroup);
+            geometryModel.BackMaterial = matGroup;
+
+            // Transform Group (Rotation + Three.js Organic Floating Breath)
+            var transformGroup = new Transform3DGroup();
+            _rotAxisY = new AxisAngleRotation3D(new Vector3D(0.2, 1.0, 0.1), 0);
+            _rotAxisX = new AxisAngleRotation3D(new Vector3D(1.0, 0.1, 0.2), 15);
+            _floatTrans = new TranslateTransform3D(0, 0, 0);
+
+            transformGroup.Children.Add(new RotateTransform3D(_rotAxisY));
+            transformGroup.Children.Add(new RotateTransform3D(_rotAxisX));
+            transformGroup.Children.Add(_floatTrans);
+
+            geometryModel.Transform = transformGroup;
+            modelGroup.Children.Add(geometryModel);
+
+            var visual = new ModelVisual3D { Content = modelGroup };
+            _viewport.Children.Add(visual);
+            Children.Add(_viewport);
+
+            // 4. 60 FPS Three.js Dynamic Animation Loop
+            _stopwatch = Stopwatch.StartNew();
+            _animTimer = new DispatcherTimer(DispatcherPriority.Render)
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _animTimer.Tick += delegate
+            {
+                double elapsedSec = _stopwatch.ElapsedMilliseconds / 1000.0;
+                // Three.js Organic Floating Breath formula: wheelRoot.position.y = Math.sin(elapsedTime * 1.5) * 0.12;
+                double floatY = Math.Sin(elapsedSec * 1.5) * 0.12;
+                _floatTrans.OffsetY = floatY;
+                _rotAxisY.Angle = (_rotAxisY.Angle + 0.35) % 360.0;
+                _rotAxisX.Angle = 15.0 + Math.Sin(elapsedSec * 0.8) * 8.0;
+
+                // Orbiting Caustic Orbs
+                _glow1Trans.X = Math.Sin(elapsedSec * 0.9) * 25.0;
+                _glow1Trans.Y = Math.Cos(elapsedSec * 1.1) * 20.0;
+                _glow2Trans.X = -Math.Cos(elapsedSec * 0.8) * 22.0;
+                _glow2Trans.Y = -Math.Sin(elapsedSec * 1.0) * 18.0;
+            };
+            _animTimer.Start();
+        }
+
+        private static MeshGeometry3D GenerateTorusMesh(double majorRadius, double minorRadius, int majorSegments, int minorSegments)
+        {
+            var mesh = new MeshGeometry3D();
+            for (int i = 0; i <= majorSegments; i++)
+            {
+                double u = (double)i / majorSegments * 2.0 * Math.PI;
+                double cosU = Math.Cos(u);
+                double sinU = Math.Sin(u);
+
+                for (int j = 0; j <= minorSegments; j++)
+                {
+                    double v = (double)j / minorSegments * 2.0 * Math.PI;
+                    double cosV = Math.Cos(v);
+                    double sinV = Math.Sin(v);
+
+                    double x = (majorRadius + minorRadius * cosV) * cosU;
+                    double y = (majorRadius + minorRadius * cosV) * sinU;
+                    double z = minorRadius * sinV;
+
+                    mesh.Positions.Add(new Point3D(x, y, z));
+                    mesh.Normals.Add(new Vector3D(cosV * cosU, cosV * sinU, sinV));
+                    mesh.TextureCoordinates.Add(new Point((double)i / majorSegments, (double)j / minorSegments));
+                }
+            }
+
+            for (int i = 0; i < majorSegments; i++)
+            {
+                for (int j = 0; j < minorSegments; j++)
+                {
+                    int current = i * (minorSegments + 1) + j;
+                    int next = (i + 1) * (minorSegments + 1) + j;
+
+                    mesh.TriangleIndices.Add(current);
+                    mesh.TriangleIndices.Add(next);
+                    mesh.TriangleIndices.Add(current + 1);
+
+                    mesh.TriangleIndices.Add(current + 1);
+                    mesh.TriangleIndices.Add(next);
+                    mesh.TriangleIndices.Add(next + 1);
+                }
+            }
+
+            return mesh;
         }
     }
 
@@ -767,8 +1015,8 @@ namespace OMNIWHEEL.Installer
         public SetupWindow()
         {
             Title = "OMNIWHEEL 1.0 - Setup Wizard";
-            Width = 550;
-            Height = 750;
+            Width = 580;
+            Height = 770;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.NoResize;
             Background = Brushes.Transparent;
@@ -823,65 +1071,82 @@ namespace OMNIWHEEL.Installer
 
         private void BuildUI()
         {
-            // Outer Neumorphic Card Chassis in Curd White (Soft UI Extrusion)
+            // Outer Neumorphic Card Chassis with Realistic 3D PBR Glass Shell
             var rootBorder = new Border
             {
-                CornerRadius = new CornerRadius(16),
-                BorderThickness = new Thickness(1.5),
+                CornerRadius = new CornerRadius(18),
+                BorderThickness = new Thickness(1.6),
                 BorderBrush = new LinearGradientBrush(
-                    Color.FromRgb(0xFF, 0xFF, 0xFF), // Top specular highlight
-                    Color.FromRgb(0xC6, 0xBD, 0xAC), // Bottom warm shadow rim
+                    Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF), // Top specular highlight
+                    Color.FromArgb(0xC0, 0xC6, 0xBD, 0xAC), // Bottom warm shadow rim
                     new Point(0, 0), new Point(0, 1)),
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(0xF5, 0xF2, 0xEB), // Curd White top
-                    Color.FromRgb(0xE7, 0xE2, 0xD6), // Curd White bottom
+                    Color.FromArgb(0xEE, 0xF7, 0xF4, 0xED),
+                    Color.FromArgb(0xE8, 0xE7, 0xE1, 0xD4),
                     new Point(0, 0), new Point(0, 1))
             };
             rootBorder.Effect = new DropShadowEffect
             {
-                BlurRadius = 36,
-                ShadowDepth = 10,
+                BlurRadius = 38,
+                ShadowDepth = 12,
                 Opacity = 0.45,
                 Color = Color.FromRgb(0x78, 0x70, 0x62)
             };
 
+            // Entrance Pop-In & Fade Animation
+            var rootScale = new ScaleTransform(0.95, 0.95);
+            rootBorder.RenderTransformOrigin = new Point(0.5, 0.5);
+            rootBorder.RenderTransform = rootScale;
+            Loaded += delegate
+            {
+                var popAnim = new DoubleAnimation(0.95, 1.0, TimeSpan.FromMilliseconds(420))
+                {
+                    EasingFunction = new BackEase { Amplitude = 0.28, EasingMode = EasingMode.EaseOut }
+                };
+                var fadeAnim = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(280));
+                rootScale.BeginAnimation(ScaleTransform.ScaleXProperty, popAnim);
+                rootScale.BeginAnimation(ScaleTransform.ScaleYProperty, popAnim);
+                rootBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+            };
+
             var mainGrid = new Grid();
-            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(76) });  // Header
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(80) });  // Header
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Content
-            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(62) });  // Footer
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(66) });  // Footer
 
             // 1. Neumorphic Curd White Header
             var headerBorder = new Border
             {
-                CornerRadius = new CornerRadius(15, 15, 0, 0),
+                CornerRadius = new CornerRadius(17, 17, 0, 0),
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(0xFC, 0xFA, 0xF6),
-                    Color.FromRgb(0xEB, 0xE5, 0xD8),
+                    Color.FromArgb(0xF2, 0xFC, 0xFA, 0xF6),
+                    Color.FromArgb(0xE6, 0xEB, 0xE5, 0xD8),
                     new Point(0, 0), new Point(0, 1)),
                 BorderThickness = new Thickness(0, 0, 0, 1.2),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0xD2, 0xCB, 0xBC)),
-                Padding = new Thickness(20, 10, 16, 10)
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, 0xD2, 0xCB, 0xBC)),
+                Padding = new Thickness(22, 10, 18, 10)
             };
             headerBorder.MouseDown += (s, e) => { if (e.LeftButton == MouseButtonState.Pressed) DragMove(); };
 
             var headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
 
             var headerTextStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             var titleBlock = new TextBlock
             {
                 Text = "OMNIWHEEL  1.0  SETUP WIZARD",
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x20, 0x1C, 0x2A)),
+                FontSize = 17,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x18, 0x14, 0x24)),
                 FontFamily = new FontFamily("Segoe UI")
             };
             var subtitleBlock = new TextBlock
             {
                 Text = "Radial Power Converter & Desktop Utility • Windows 7, 10 & 11",
-                FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x62, 0x5B, 0x4E)),
+                FontSize = 11.5,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x52, 0x44)),
                 FontFamily = new FontFamily("Segoe UI"),
                 Margin = new Thickness(0, 2, 0, 0)
             };
@@ -889,6 +1154,36 @@ namespace OMNIWHEEL.Installer
             headerTextStack.Children.Add(subtitleBlock);
             Grid.SetColumn(headerTextStack, 0);
             headerGrid.Children.Add(headerTextStack);
+
+            // Three.js 3D WebGL Studio Launch Button
+            var btn3D = new Button
+            {
+                Content = "✨ 3D Studio",
+                Height = 28,
+                Padding = new Thickness(12, 0, 12, 0),
+                Margin = new Thickness(0, 0, 10, 0),
+                FontSize = 11.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x7C, 0x3A, 0xED)),
+                Background = new LinearGradientBrush(
+                    Color.FromArgb(0xF4, 0xFF, 0xFF, 0xFF),
+                    Color.FromArgb(0xE4, 0xEE, 0xE7, 0xFD),
+                    new Point(0, 0), new Point(0, 1)),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0xB8, 0xC4, 0xB5, 0xFD)),
+                BorderThickness = new Thickness(1.2),
+                Cursor = Cursors.Hand,
+                ToolTip = "Launch Three.js 3D WebGL Frosted Glass Studio"
+            };
+            btn3D.Effect = new DropShadowEffect
+            {
+                BlurRadius = 8,
+                ShadowDepth = 1,
+                Opacity = 0.25,
+                Color = Color.FromRgb(0x7C, 0x3A, 0xED)
+            };
+            btn3D.Click += delegate { SetupApp.Launch3DStudio(); };
+            Grid.SetColumn(btn3D, 1);
+            headerGrid.Children.Add(btn3D);
 
             var closeBtn = new Button
             {
@@ -913,23 +1208,23 @@ namespace OMNIWHEEL.Installer
                 Color = Color.FromRgb(0x99, 0x90, 0x80)
             };
             closeBtn.Click += (s, e) => Close();
-            Grid.SetColumn(closeBtn, 1);
+            Grid.SetColumn(closeBtn, 2);
             headerGrid.Children.Add(closeBtn);
             headerBorder.Child = headerGrid;
             Grid.SetRow(headerBorder, 0);
             mainGrid.Children.Add(headerBorder);
 
             // 2. Main Content Body
-            var contentStack = new StackPanel { Margin = new Thickness(22, 12, 22, 10) };
+            var contentStack = new StackPanel { Margin = new Thickness(24, 12, 24, 10) };
 
             // Standard Welcome description
             var introText = new TextBlock
             {
                 Text = "Welcome to the OMNIWHEEL Setup Wizard. This wizard installs OMNIWHEEL 1.0 on your computer. Enjoy fast radial file conversions for 43+ formats directly inside Windows Explorer.",
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x48, 0x42, 0x38)),
-                LineHeight = 16,
+                FontSize = 11.5,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x3E, 0x38, 0x2E)),
+                LineHeight = 16.5,
                 Margin = new Thickness(0, 0, 0, 10)
             };
             contentStack.Children.Add(introText);
@@ -941,8 +1236,8 @@ namespace OMNIWHEEL.Installer
             var lblDir = new TextBlock
             {
                 Text = "DESTINATION FOLDER:",
-                FontSize = 10.5,
-                FontWeight = FontWeights.Bold,
+                FontSize = 11.5,
+                FontWeight = FontWeights.ExtraBold,
                 Foreground = new SolidColorBrush(Color.FromRgb(0xEA, 0x58, 0x0C)),
                 Margin = new Thickness(0, 10, 0, 4)
             };
@@ -950,21 +1245,21 @@ namespace OMNIWHEEL.Installer
 
             var dirGrid = new Grid { Margin = new Thickness(0, 0, 0, 3) };
             dirGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            dirGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(85) });
+            dirGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
 
             _txtInstallDir = new TextBox
             {
                 Text = SetupApp.GetDefaultInstallDir(),
-                Height = 30,
-                Padding = new Thickness(8, 5, 8, 5),
+                Height = 34,
+                Padding = new Thickness(10, 6, 10, 6),
                 Background = new LinearGradientBrush(
                     Color.FromRgb(0xEB, 0xE6, 0xDC),
                     Color.FromRgb(0xF6, 0xF3, 0xED),
                     new Point(0, 0), new Point(0, 1)),
                 Foreground = new SolidColorBrush(Color.FromRgb(0x1E, 0x1A, 0x28)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0xC6, 0xBD, 0xAC)),
-                BorderThickness = new Thickness(1),
-                FontSize = 11.5,
+                BorderThickness = new Thickness(1.2),
+                FontSize = 12.5,
                 VerticalContentAlignment = VerticalAlignment.Center
             };
             _txtInstallDir.TextChanged += (s, e) => UpdateDiskSpaceLabel();
@@ -974,15 +1269,17 @@ namespace OMNIWHEEL.Installer
             var btnBrowse = new Button
             {
                 Content = "Browse...",
-                Height = 30,
+                Height = 34,
                 Margin = new Thickness(8, 0, 0, 0),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
                 Background = new LinearGradientBrush(
                     Color.FromRgb(0xFF, 0xFF, 0xFF),
                     Color.FromRgb(0xEA, 0xE4, 0xD6),
                     new Point(0, 0), new Point(0, 1)),
                 Foreground = new SolidColorBrush(Color.FromRgb(0x26, 0x20, 0x30)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0xCC, 0xC4, 0xB2)),
-                BorderThickness = new Thickness(1),
+                BorderThickness = new Thickness(1.2),
                 Cursor = Cursors.Hand
             };
             btnBrowse.Effect = new DropShadowEffect
@@ -1009,8 +1306,8 @@ namespace OMNIWHEEL.Installer
             _lblSpace = new TextBlock
             {
                 Text = GetAvailableDiskSpace(_txtInstallDir.Text),
-                FontSize = 10,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x6A, 0x62, 0x54)),
+                FontSize = 10.5,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0x58, 0x4A)),
                 Margin = new Thickness(0, 0, 0, 8)
             };
             contentStack.Children.Add(_lblSpace);
@@ -1019,8 +1316,8 @@ namespace OMNIWHEEL.Installer
             var lblOpt = new TextBlock
             {
                 Text = "INTEGRATION OPTIONS:",
-                FontSize = 10.5,
-                FontWeight = FontWeights.Bold,
+                FontSize = 11.5,
+                FontWeight = FontWeights.ExtraBold,
                 Foreground = new SolidColorBrush(Color.FromRgb(0xEA, 0x58, 0x0C)),
                 Margin = new Thickness(0, 0, 0, 5)
             };
@@ -1042,15 +1339,16 @@ namespace OMNIWHEEL.Installer
             _lblStatus = new TextBlock
             {
                 Text = "Ready to install. Click 'Install Now' to proceed.",
-                FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x48, 0x40, 0x34)),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x38, 0x32, 0x28)),
                 Margin = new Thickness(0, 8, 0, 5)
             };
             contentStack.Children.Add(_lblStatus);
 
             _progressBar = new ProgressBar
             {
-                Height = 8,
+                Height = 10,
                 Minimum = 0,
                 Maximum = 100,
                 Value = 0,
@@ -1072,11 +1370,14 @@ namespace OMNIWHEEL.Installer
             // 3. Footer Bar with Cancel and Install Now buttons
             var footerBorder = new Border
             {
-                CornerRadius = new CornerRadius(0, 0, 15, 15),
-                Background = new SolidColorBrush(Color.FromRgb(0xEA, 0xE4, 0xD6)),
+                CornerRadius = new CornerRadius(0, 0, 17, 17),
+                Background = new LinearGradientBrush(
+                    Color.FromArgb(0xEA, 0xEA, 0xE4, 0xD6),
+                    Color.FromArgb(0xF4, 0xE2, 0xDC, 0xCE),
+                    new Point(0, 0), new Point(0, 1)),
                 BorderThickness = new Thickness(0, 1.2, 0, 0),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0xCE, 0xC6, 0xB6)),
-                Padding = new Thickness(20, 12, 20, 12)
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, 0xCE, 0xC6, 0xB6)),
+                Padding = new Thickness(22, 12, 22, 12)
             };
             var footerStack = new StackPanel
             {
@@ -1087,9 +1388,10 @@ namespace OMNIWHEEL.Installer
             _btnCancel = new Button
             {
                 Content = "Cancel",
-                Width = 90,
-                Height = 34,
-                Margin = new Thickness(0, 0, 12, 0),
+                Width = 100,
+                Height = 36,
+                FontSize = 12.5,
+                Margin = new Thickness(0, 0, 14, 0),
                 Background = new LinearGradientBrush(
                     Color.FromRgb(0xF8, 0xF5, 0xEE),
                     Color.FromRgb(0xDF, 0xD8, 0xCA),
@@ -1112,8 +1414,9 @@ namespace OMNIWHEEL.Installer
             _btnInstall = new Button
             {
                 Content = "Install Now",
-                Width = 145,
-                Height = 34,
+                Width = 150,
+                Height = 36,
+                FontSize = 13.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
                 Background = new LinearGradientBrush(
@@ -1129,9 +1432,9 @@ namespace OMNIWHEEL.Installer
             };
             _btnInstall.Effect = new DropShadowEffect
             {
-                BlurRadius = 16,
+                BlurRadius = 18,
                 ShadowDepth = 3,
-                Opacity = 0.50,
+                Opacity = 0.55,
                 Color = Color.FromRgb(0xFF, 0x6B, 0x00)
             };
             _btnInstall.Click += OnInstallClick;
@@ -1141,7 +1444,12 @@ namespace OMNIWHEEL.Installer
             Grid.SetRow(footerBorder, 2);
             mainGrid.Children.Add(footerBorder);
 
-            rootBorder.Child = mainGrid;
+            // Realistic Three.js 3D Background Layer + Interactive Foreground
+            var masterGrid = new Grid();
+            masterGrid.Children.Add(new RealisticThreeJsBackground(false));
+            masterGrid.Children.Add(mainGrid);
+
+            rootBorder.Child = masterGrid;
             Content = rootBorder;
         }
 
@@ -1264,8 +1572,8 @@ namespace OMNIWHEEL.Installer
             var titleBlock = new TextBlock
             {
                 Name = "GreetingTitle",
-                FontSize = 26,
-                FontWeight = FontWeights.Bold,
+                FontSize = 28,
+                FontWeight = FontWeights.ExtraBold,
                 FontFamily = new FontFamily("Segoe UI, Iskoola Pota, Nirmala UI, Latha, Meiryo, Microsoft YaHei, Mangal, Tahoma, Arial"),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
@@ -1274,9 +1582,9 @@ namespace OMNIWHEEL.Installer
             var subBlock = new TextBlock
             {
                 Name = "GreetingSub",
-                FontSize = 11,
+                FontSize = 11.5,
                 FontFamily = new FontFamily("Segoe UI, Iskoola Pota, Nirmala UI, Latha, Meiryo, Microsoft YaHei, Mangal, Tahoma, Arial"),
-                Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0x58, 0x4A)),
+                Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0x4E, 0x42)),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Margin = new Thickness(0, 3, 0, 0)
             };
@@ -1418,7 +1726,7 @@ namespace OMNIWHEEL.Installer
                 var tb = new TextBlock
                 {
                     Text = c.ToString(),
-                    FontSize = 23,
+                    FontSize = 24,
                     FontWeight = FontWeights.Black,
                     FontFamily = new FontFamily("Segoe UI, Arial Black"),
                     Margin = new Thickness(c == ' ' ? 8 : 1.0, 0, c == ' ' ? 8 : 1.0, 0),
@@ -1429,9 +1737,9 @@ namespace OMNIWHEEL.Installer
                 };
                 tb.Effect = new DropShadowEffect
                 {
-                    BlurRadius = 10,
+                    BlurRadius = 12,
                     ShadowDepth = 0,
-                    Opacity = 0.85,
+                    Opacity = 0.90,
                     Color = Color.FromRgb(0xFF, 0x9D, 0x42)
                 };
 
@@ -1621,8 +1929,8 @@ namespace OMNIWHEEL.Installer
         public UninstallWindow()
         {
             Title = "OMNIWHEEL 1.0 - Uninstall";
-            Width = 540;
-            Height = 650;
+            Width = 580;
+            Height = 700;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ResizeMode = ResizeMode.NoResize;
             Background = Brushes.Transparent;
@@ -1644,44 +1952,60 @@ namespace OMNIWHEEL.Installer
 
         private void BuildUI()
         {
-            // Outer Neumorphic Card Chassis in Curd White
+            // Outer Neumorphic Card Chassis with Realistic 3D PBR Glass Shell
             var rootBorder = new Border
             {
-                CornerRadius = new CornerRadius(16),
-                BorderThickness = new Thickness(1.5),
+                CornerRadius = new CornerRadius(18),
+                BorderThickness = new Thickness(1.6),
                 BorderBrush = new LinearGradientBrush(
-                    Color.FromRgb(0xFF, 0xFF, 0xFF),
-                    Color.FromRgb(0xC6, 0xBD, 0xAC),
+                    Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF), // Top specular highlight
+                    Color.FromArgb(0xC0, 0xC6, 0xBD, 0xAC), // Bottom warm shadow rim
                     new Point(0, 0), new Point(0, 1)),
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(0xF5, 0xF2, 0xEB),
-                    Color.FromRgb(0xE7, 0xE2, 0xD6),
+                    Color.FromArgb(0xEE, 0xF7, 0xF4, 0xED),
+                    Color.FromArgb(0xE8, 0xE7, 0xE1, 0xD4),
                     new Point(0, 0), new Point(0, 1))
             };
             rootBorder.Effect = new DropShadowEffect
             {
-                BlurRadius = 36,
-                ShadowDepth = 10,
+                BlurRadius = 38,
+                ShadowDepth = 12,
                 Opacity = 0.45,
                 Color = Color.FromRgb(0x78, 0x70, 0x62)
             };
 
+            // Entrance Pop-In & Fade Animation
+            var rootScale = new ScaleTransform(0.95, 0.95);
+            rootBorder.RenderTransformOrigin = new Point(0.5, 0.5);
+            rootBorder.RenderTransform = rootScale;
+            Loaded += delegate
+            {
+                var popAnim = new DoubleAnimation(0.95, 1.0, TimeSpan.FromMilliseconds(420))
+                {
+                    EasingFunction = new BackEase { Amplitude = 0.28, EasingMode = EasingMode.EaseOut }
+                };
+                var fadeAnim = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(280));
+                rootScale.BeginAnimation(ScaleTransform.ScaleXProperty, popAnim);
+                rootScale.BeginAnimation(ScaleTransform.ScaleYProperty, popAnim);
+                rootBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+            };
+
             var mainGrid = new Grid();
-            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(74) });
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(80) });
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(62) });
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(66) });
 
             // 1. Header Bar
             var headerBorder = new Border
             {
-                CornerRadius = new CornerRadius(15, 15, 0, 0),
+                CornerRadius = new CornerRadius(17, 17, 0, 0),
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(0xFC, 0xFA, 0xF6),
-                    Color.FromRgb(0xEB, 0xE5, 0xD8),
+                    Color.FromArgb(0xF2, 0xFC, 0xFA, 0xF6),
+                    Color.FromArgb(0xE6, 0xEB, 0xE5, 0xD8),
                     new Point(0, 0), new Point(0, 1)),
                 BorderThickness = new Thickness(0, 0, 0, 1.2),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0xD2, 0xCB, 0xBC)),
-                Padding = new Thickness(20, 10, 16, 10)
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, 0xD2, 0xCB, 0xBC)),
+                Padding = new Thickness(22, 10, 18, 10)
             };
             headerBorder.MouseDown += delegate(object s, MouseButtonEventArgs e)
             {
@@ -1690,22 +2014,23 @@ namespace OMNIWHEEL.Installer
 
             var headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
 
             var headerTextStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             var titleBlock = new TextBlock
             {
                 Text = "OMNIWHEEL  1.0  UNINSTALL",
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x20, 0x1C, 0x2A)),
+                FontSize = 17,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x18, 0x14, 0x24)),
                 FontFamily = new FontFamily("Segoe UI")
             };
             var subtitleBlock = new TextBlock
             {
                 Text = "Remove OMNIWHEEL and all associated desktop components",
-                FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x62, 0x5B, 0x4E)),
+                FontSize = 11.5,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x52, 0x44)),
                 FontFamily = new FontFamily("Segoe UI"),
                 Margin = new Thickness(0, 2, 0, 0)
             };
@@ -1713,6 +2038,36 @@ namespace OMNIWHEEL.Installer
             headerTextStack.Children.Add(subtitleBlock);
             Grid.SetColumn(headerTextStack, 0);
             headerGrid.Children.Add(headerTextStack);
+
+            // Three.js 3D WebGL Studio Launch Button
+            var btn3D = new Button
+            {
+                Content = "✨ 3D Studio",
+                Height = 28,
+                Padding = new Thickness(12, 0, 12, 0),
+                Margin = new Thickness(0, 0, 10, 0),
+                FontSize = 11.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x7C, 0x3A, 0xED)),
+                Background = new LinearGradientBrush(
+                    Color.FromArgb(0xF4, 0xFF, 0xFF, 0xFF),
+                    Color.FromArgb(0xE4, 0xEE, 0xE7, 0xFD),
+                    new Point(0, 0), new Point(0, 1)),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0xB8, 0xC4, 0xB5, 0xFD)),
+                BorderThickness = new Thickness(1.2),
+                Cursor = Cursors.Hand,
+                ToolTip = "Launch Three.js 3D WebGL Frosted Glass Studio"
+            };
+            btn3D.Effect = new DropShadowEffect
+            {
+                BlurRadius = 8,
+                ShadowDepth = 1,
+                Opacity = 0.25,
+                Color = Color.FromRgb(0x7C, 0x3A, 0xED)
+            };
+            btn3D.Click += delegate { SetupApp.Launch3DStudio(); };
+            Grid.SetColumn(btn3D, 1);
+            headerGrid.Children.Add(btn3D);
 
             var closeBtn = new Button
             {
@@ -1730,20 +2085,20 @@ namespace OMNIWHEEL.Installer
                 Cursor = Cursors.Hand
             };
             closeBtn.Click += delegate { Close(); };
-            Grid.SetColumn(closeBtn, 1);
+            Grid.SetColumn(closeBtn, 2);
             headerGrid.Children.Add(closeBtn);
             headerBorder.Child = headerGrid;
             Grid.SetRow(headerBorder, 0);
             mainGrid.Children.Add(headerBorder);
 
             // 2. Main Content Body
-            var contentStack = new StackPanel { Margin = new Thickness(24, 14, 24, 10) };
+            var contentStack = new StackPanel { Margin = new Thickness(24, 12, 24, 10) };
 
             // 2A. SAD FACE IMAGE GRAPHIC
             var sadFaceContainer = new Border
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 6, 0, 4)
+                Margin = new Thickness(0, 4, 0, 4)
             };
             sadFaceContainer.Child = CreateSadFaceGraphic();
             contentStack.Children.Add(sadFaceContainer);
@@ -1752,8 +2107,8 @@ namespace OMNIWHEEL.Installer
             var sadTitle = new TextBlock
             {
                 Text = " SAAAAD TO SEE YOU GOOOO",
-                FontSize = 23,
-                FontWeight = FontWeights.ExtraBold,
+                FontSize = 25,
+                FontWeight = FontWeights.Black,
                 FontFamily = new FontFamily("Segoe UI, Arial Black"),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
@@ -1761,13 +2116,13 @@ namespace OMNIWHEEL.Installer
                     Color.FromRgb(0xFF, 0x7A, 0x00),
                     Color.FromRgb(0xEA, 0x58, 0x0C),
                     new Point(0, 0), new Point(1, 1)),
-                Margin = new Thickness(0, 10, 0, 6)
+                Margin = new Thickness(0, 8, 0, 6)
             };
             sadTitle.Effect = new DropShadowEffect
             {
-                BlurRadius = 14,
+                BlurRadius = 16,
                 ShadowDepth = 1,
-                Opacity = 0.55,
+                Opacity = 0.60,
                 Color = Color.FromRgb(0xFF, 0x6B, 0x00)
             };
             contentStack.Children.Add(sadTitle);
@@ -1777,36 +2132,36 @@ namespace OMNIWHEEL.Installer
             {
                 Text = "We're truly sad to see you leave! If you ran into any issues or have suggestions, we'd love your feedback. Clicking 'Uninstall OMNIWHEEL' below will cleanly remove all components from your system.",
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x56, 0x4E, 0x42)),
+                FontSize = 11.5,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x4E, 0x46, 0x3A)),
                 TextAlignment = TextAlignment.Center,
-                LineHeight = 16,
-                Margin = new Thickness(10, 0, 10, 12)
+                LineHeight = 16.5,
+                Margin = new Thickness(10, 0, 10, 10)
             };
             contentStack.Children.Add(messageBlock);
 
             // 2D. Scope Box (Recessed Inset Plate in Curd White)
             var scopeBox = new Border
             {
-                CornerRadius = new CornerRadius(10),
+                CornerRadius = new CornerRadius(12),
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(0xEB, 0xE5, 0xD9),
-                    Color.FromRgb(0xF5, 0xF2, 0xEC),
+                    Color.FromArgb(0xEE, 0xEB, 0xE5, 0xD9),
+                    Color.FromArgb(0xF6, 0xF5, 0xF2, 0xEC),
                     new Point(0, 0), new Point(0, 1)),
                 BorderBrush = new LinearGradientBrush(
                     Color.FromRgb(0xC6, 0xBD, 0xAC),
                     Color.FromRgb(0xFF, 0xFF, 0xFF),
                     new Point(0, 0), new Point(0, 1)),
                 BorderThickness = new Thickness(1.2),
-                Padding = new Thickness(14, 10, 14, 10),
-                Margin = new Thickness(0, 0, 0, 12)
+                Padding = new Thickness(16, 10, 16, 10),
+                Margin = new Thickness(0, 0, 0, 10)
             };
             var scopeStack = new StackPanel();
             var scopeHeader = new TextBlock
             {
                 Text = "WHAT WILL BE REMOVED:",
-                FontSize = 10,
-                FontWeight = FontWeights.Bold,
+                FontSize = 11,
+                FontWeight = FontWeights.ExtraBold,
                 Foreground = new SolidColorBrush(Color.FromRgb(0xEA, 0x58, 0x0C)),
                 Margin = new Thickness(0, 0, 0, 5)
             };
@@ -1825,8 +2180,8 @@ namespace OMNIWHEEL.Installer
                 scopeStack.Children.Add(new TextBlock
                 {
                     Text = it,
-                    FontSize = 10.5,
-                    Foreground = new SolidColorBrush(Color.FromRgb(0x40, 0x38, 0x30)),
+                    FontSize = 11,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x38, 0x30, 0x28)),
                     Margin = new Thickness(0, 1.5, 0, 1.5)
                 });
             }
@@ -1837,15 +2192,16 @@ namespace OMNIWHEEL.Installer
             _lblStatus = new TextBlock
             {
                 Text = "Ready to uninstall. Click 'Uninstall OMNIWHEEL' to proceed.",
-                FontSize = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x48, 0x40, 0x34)),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Color.FromRgb(0x38, 0x32, 0x28)),
                 Margin = new Thickness(0, 0, 0, 5)
             };
             contentStack.Children.Add(_lblStatus);
 
             _progressBar = new ProgressBar
             {
-                Height = 8,
+                Height = 10,
                 Minimum = 0,
                 Maximum = 100,
                 Value = 0,
@@ -1864,11 +2220,14 @@ namespace OMNIWHEEL.Installer
             // 3. Footer Bar with Keep App and Uninstall buttons
             var footerBorder = new Border
             {
-                CornerRadius = new CornerRadius(0, 0, 15, 15),
-                Background = new SolidColorBrush(Color.FromRgb(0xEA, 0xE4, 0xD6)),
+                CornerRadius = new CornerRadius(0, 0, 17, 17),
+                Background = new LinearGradientBrush(
+                    Color.FromArgb(0xEA, 0xEA, 0xE4, 0xD6),
+                    Color.FromArgb(0xF4, 0xE2, 0xDC, 0xCE),
+                    new Point(0, 0), new Point(0, 1)),
                 BorderThickness = new Thickness(0, 1.2, 0, 0),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0xCE, 0xC6, 0xB6)),
-                Padding = new Thickness(20, 12, 20, 12)
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, 0xCE, 0xC6, 0xB6)),
+                Padding = new Thickness(22, 12, 22, 12)
             };
             var footerStack = new StackPanel
             {
@@ -1879,9 +2238,11 @@ namespace OMNIWHEEL.Installer
             _btnCancel = new Button
             {
                 Content = "Keep OMNIWHEEL",
-                Width = 140,
-                Height = 34,
-                Margin = new Thickness(0, 0, 12, 0),
+                Width = 150,
+                Height = 36,
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 14, 0),
                 Background = new LinearGradientBrush(
                     Color.FromRgb(0xF8, 0xF5, 0xEE),
                     Color.FromRgb(0xDF, 0xD8, 0xCA),
@@ -1904,8 +2265,9 @@ namespace OMNIWHEEL.Installer
             _btnUninstall = new Button
             {
                 Content = "Uninstall OMNIWHEEL",
-                Width = 175,
-                Height = 34,
+                Width = 185,
+                Height = 36,
+                FontSize = 13.5,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
                 Background = new LinearGradientBrush(
@@ -1921,9 +2283,9 @@ namespace OMNIWHEEL.Installer
             };
             _btnUninstall.Effect = new DropShadowEffect
             {
-                BlurRadius = 16,
+                BlurRadius = 18,
                 ShadowDepth = 3,
-                Opacity = 0.50,
+                Opacity = 0.55,
                 Color = Color.FromRgb(0xEA, 0x58, 0x0C)
             };
             _btnUninstall.Click += OnUninstallClick;
@@ -1933,7 +2295,12 @@ namespace OMNIWHEEL.Installer
             Grid.SetRow(footerBorder, 2);
             mainGrid.Children.Add(footerBorder);
 
-            rootBorder.Child = mainGrid;
+            // Realistic Three.js 3D Background Layer + Interactive Foreground
+            var masterGrid = new Grid();
+            masterGrid.Children.Add(new RealisticThreeJsBackground(true));
+            masterGrid.Children.Add(mainGrid);
+
+            rootBorder.Child = masterGrid;
             Content = rootBorder;
         }
 
@@ -1941,8 +2308,8 @@ namespace OMNIWHEEL.Installer
         {
             var canvas = new Canvas
             {
-                Width = 100,
-                Height = 100,
+                Width = 112,
+                Height = 112,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -1950,30 +2317,44 @@ namespace OMNIWHEEL.Installer
             // 1. Face Disc (Curd white with subtle warm shadow)
             var face = new System.Windows.Shapes.Ellipse
             {
-                Width = 100,
-                Height = 100,
+                Width = 112,
+                Height = 112,
                 Fill = new LinearGradientBrush(
                     Color.FromRgb(0xFA, 0xF6, 0xEE),
                     Color.FromRgb(0xE6, 0xDF, 0xD0),
                     new Point(0, 0), new Point(0, 1)),
                 Stroke = new SolidColorBrush(Color.FromRgb(0xD0, 0xC6, 0xB4)),
-                StrokeThickness = 2
+                StrokeThickness = 2.2
             };
             face.Effect = new DropShadowEffect
             {
-                BlurRadius = 18,
-                ShadowDepth = 3,
-                Opacity = 0.35,
+                BlurRadius = 20,
+                ShadowDepth = 4,
+                Opacity = 0.38,
                 Color = Color.FromRgb(0x8A, 0x80, 0x70)
             };
             canvas.Children.Add(face);
 
+            // Specular Arc on Top Forehead
+            var specArc = new System.Windows.Shapes.Ellipse
+            {
+                Width = 84,
+                Height = 36,
+                Fill = new LinearGradientBrush(
+                    Color.FromArgb(0x80, 0xFF, 0xFF, 0xFF),
+                    Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF),
+                    new Point(0, 0), new Point(0, 1))
+            };
+            Canvas.SetLeft(specArc, 14);
+            Canvas.SetTop(specArc, 8);
+            canvas.Children.Add(specArc);
+
             // 2. Left Eyebrow (Tilted down inward in sadness: \)
             var leftBrow = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M 26,30 Q 35,26 44,34"),
-                Stroke = new SolidColorBrush(Color.FromRgb(0x60, 0x54, 0x46)),
-                StrokeThickness = 2.8,
+                Data = Geometry.Parse("M 28,34 Q 38,29 48,38"),
+                Stroke = new SolidColorBrush(Color.FromRgb(0x5A, 0x50, 0x42)),
+                StrokeThickness = 3.2,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
             };
@@ -1982,77 +2363,113 @@ namespace OMNIWHEEL.Installer
             // 3. Right Eyebrow (Tilted down inward in sadness: /)
             var rightBrow = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M 56,34 Q 65,26 74,30"),
-                Stroke = new SolidColorBrush(Color.FromRgb(0x60, 0x54, 0x46)),
-                StrokeThickness = 2.8,
+                Data = Geometry.Parse("M 64,38 Q 74,29 84,34"),
+                Stroke = new SolidColorBrush(Color.FromRgb(0x5A, 0x50, 0x42)),
+                StrokeThickness = 3.2,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
             };
             canvas.Children.Add(rightBrow);
 
-            // 4. Left Eye (Sad oval)
+            // 4. Left Eye (Sad glossy oval)
             var leftEye = new System.Windows.Shapes.Ellipse
             {
-                Width = 11,
-                Height = 15,
-                Fill = new SolidColorBrush(Color.FromRgb(0x28, 0x22, 0x32))
+                Width = 12,
+                Height = 17,
+                Fill = new SolidColorBrush(Color.FromRgb(0x24, 0x1E, 0x2C))
             };
-            Canvas.SetLeft(leftEye, 29);
-            Canvas.SetTop(leftEye, 37);
+            Canvas.SetLeft(leftEye, 32);
+            Canvas.SetTop(leftEye, 42);
             canvas.Children.Add(leftEye);
 
             // Left Eye Pupil Specular Highlight
-            var leftSpec = new System.Windows.Shapes.Ellipse { Width = 4, Height = 4, Fill = Brushes.White };
-            Canvas.SetLeft(leftSpec, 32);
-            Canvas.SetTop(leftSpec, 39);
+            var leftSpec = new System.Windows.Shapes.Ellipse { Width = 5, Height = 5, Fill = Brushes.White };
+            Canvas.SetLeft(leftSpec, 35);
+            Canvas.SetTop(leftSpec, 44);
             canvas.Children.Add(leftSpec);
 
-            // 5. Right Eye (Sad oval)
+            var leftSpecSmall = new System.Windows.Shapes.Ellipse { Width = 2.5, Height = 2.5, Fill = Brushes.White };
+            Canvas.SetLeft(leftSpecSmall, 34);
+            Canvas.SetTop(leftSpecSmall, 51);
+            canvas.Children.Add(leftSpecSmall);
+
+            // 5. Right Eye (Sad glossy oval)
             var rightEye = new System.Windows.Shapes.Ellipse
             {
-                Width = 11,
-                Height = 15,
-                Fill = new SolidColorBrush(Color.FromRgb(0x28, 0x22, 0x32))
+                Width = 12,
+                Height = 17,
+                Fill = new SolidColorBrush(Color.FromRgb(0x24, 0x1E, 0x2C))
             };
-            Canvas.SetLeft(rightEye, 60);
-            Canvas.SetTop(rightEye, 37);
+            Canvas.SetLeft(rightEye, 68);
+            Canvas.SetTop(rightEye, 42);
             canvas.Children.Add(rightEye);
 
             // Right Eye Pupil Specular Highlight
-            var rightSpec = new System.Windows.Shapes.Ellipse { Width = 4, Height = 4, Fill = Brushes.White };
-            Canvas.SetLeft(rightSpec, 63);
-            Canvas.SetTop(rightSpec, 39);
+            var rightSpec = new System.Windows.Shapes.Ellipse { Width = 5, Height = 5, Fill = Brushes.White };
+            Canvas.SetLeft(rightSpec, 71);
+            Canvas.SetTop(rightSpec, 44);
             canvas.Children.Add(rightSpec);
 
-            // 6. Tear Drop falling from left eye
+            var rightSpecSmall = new System.Windows.Shapes.Ellipse { Width = 2.5, Height = 2.5, Fill = Brushes.White };
+            Canvas.SetLeft(rightSpecSmall, 70);
+            Canvas.SetTop(rightSpecSmall, 51);
+            canvas.Children.Add(rightSpecSmall);
+
+            // 6. Tear Drop falling from left eye (With Animated Gravity Translation & Opacity Pulse)
             var tear = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M 34,54 C 30,59 28,63 28,67 C 28,72 32,76 36,76 C 40,76 44,72 44,67 C 44,63 40,59 36,54 Z"),
+                Data = Geometry.Parse("M 38,60 C 34,65 31,69 31,74 C 31,79 35,83 40,83 C 45,83 49,79 49,74 C 49,69 45,65 41,60 Z"),
                 Fill = new LinearGradientBrush(
                     Color.FromRgb(0x60, 0xA5, 0xFA),
-                    Color.FromRgb(0x3B, 0x82, 0xF6),
+                    Color.FromRgb(0x25, 0x63, 0xEB),
                     new Point(0, 0), new Point(0, 1)),
-                Stroke = new SolidColorBrush(Color.FromRgb(0x25, 0x63, 0xEB)),
-                StrokeThickness = 0.8
+                Stroke = new SolidColorBrush(Color.FromRgb(0x1D, 0x4E, 0xD8)),
+                StrokeThickness = 1.0
             };
             tear.Effect = new DropShadowEffect
             {
-                BlurRadius = 8,
+                BlurRadius = 10,
                 ShadowDepth = 2,
-                Opacity = 0.40,
+                Opacity = 0.50,
                 Color = Color.FromRgb(0x3B, 0x82, 0xF6)
             };
+
+            var tearTrans = new TranslateTransform();
+            tear.RenderTransform = tearTrans;
+            var tearDropAnim = new DoubleAnimation(0, 18, TimeSpan.FromSeconds(1.8))
+            {
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            var tearFadeAnim = new DoubleAnimation(0.25, 0.95, TimeSpan.FromSeconds(1.8))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            tearTrans.BeginAnimation(TranslateTransform.YProperty, tearDropAnim);
+            tear.BeginAnimation(UIElement.OpacityProperty, tearFadeAnim);
+
             canvas.Children.Add(tear);
 
-            // 7. Sad Downturned Mouth (Pronounced sad curve)
+            // 7. Sad Downturned Mouth (Pronounced sad curve with subtle quivering keyframe)
             var mouth = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M 32,78 Q 50,62 68,78"),
+                Data = Geometry.Parse("M 35,88 Q 56,70 77,88"),
                 Stroke = new SolidColorBrush(Color.FromRgb(0xEA, 0x58, 0x0C)),
-                StrokeThickness = 3.5,
+                StrokeThickness = 3.6,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
             };
+
+            var mouthScale = new ScaleTransform(1.0, 1.0);
+            mouth.RenderTransformOrigin = new Point(0.5, 0.5);
+            mouth.RenderTransform = mouthScale;
+            var quiverAnim = new DoubleAnimation(1.0, 1.05, TimeSpan.FromMilliseconds(500))
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            mouthScale.BeginAnimation(ScaleTransform.ScaleXProperty, quiverAnim);
+
             canvas.Children.Add(mouth);
 
             return canvas;

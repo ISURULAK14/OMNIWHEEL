@@ -34,6 +34,9 @@ namespace LocalConvertNative
         private static SettingsWindow _settingsWindow;
         private static AppSettings _currentSettings;
 
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        private static extern void ExitProcess(uint uExitCode);
+
         [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true)]
         private static extern bool SetDllDirectory(string lpPathName);
 
@@ -804,19 +807,22 @@ namespace LocalConvertNative
                 {
                     Console.WriteLine(string.Format("{{\"success\":true,\"outputPath\":\"{0}\",\"size\":{1},\"message\":\"{2}\"}}",
                         EscapeJson(res.OutputPath), res.OutputSize, EscapeJson(res.Message)));
-                    Environment.Exit(0);
+                    Console.Out.Flush();
+                    ExitProcess(0);
                 }
                 else
                 {
                     Console.Error.WriteLine(string.Format("{{\"success\":false,\"error\":\"{0}\"}}", EscapeJson(res.Message)));
-                    Environment.Exit(2);
+                    Console.Error.Flush();
+                    ExitProcess(2);
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError("Headless execution failed", ex, input);
                 Console.Error.WriteLine(string.Format("{{\"success\":false,\"error\":\"{0}\"}}", EscapeJson(ex.Message)));
-                Environment.Exit(3);
+                Console.Error.Flush();
+                ExitProcess(3);
             }
         }
 
