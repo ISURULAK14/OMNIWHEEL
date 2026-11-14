@@ -574,15 +574,30 @@ namespace OMNIWHEEL.Installer
     public class RealisticThreeJsBackground : Grid
     {
         private Viewport3D _viewport;
-        private AxisAngleRotation3D _rotAxisY;
-        private AxisAngleRotation3D _rotAxisX;
-        private TranslateTransform3D _floatTrans;
+        private PerspectiveCamera _camera;
+        private AxisAngleRotation3D _rotOuterY;
+        private AxisAngleRotation3D _rotOuterX;
+        private AxisAngleRotation3D _rotInnerY;
+        private AxisAngleRotation3D _rotInnerX;
+        private AxisAngleRotation3D _rotInnerZ;
+        private AxisAngleRotation3D _rotTrackZ;
+        private AxisAngleRotation3D _rotTrackX;
+        private TranslateTransform3D _masterFloat;
+        private TranslateTransform3D[] _nodeTrans;
         private DispatcherTimer _animTimer;
         private Stopwatch _stopwatch;
+
         private Border _glowOrb1;
         private Border _glowOrb2;
+        private Border _glowOrb3;
         private TranslateTransform _glow1Trans;
         private TranslateTransform _glow2Trans;
+        private TranslateTransform _glow3Trans;
+
+        private double _targetCamX = 0;
+        private double _targetCamY = 0;
+        private double _camX = 0;
+        private double _camY = 0;
 
         public RealisticThreeJsBackground(bool isUninstallMode)
         {
@@ -594,136 +609,232 @@ namespace OMNIWHEEL.Installer
             {
                 Center = new Point(0.5, 0.45),
                 GradientOrigin = new Point(0.5, 0.45),
-                RadiusX = 0.85,
-                RadiusY = 0.85
+                RadiusX = 0.88,
+                RadiusY = 0.88
             };
             if (!isUninstallMode)
             {
                 baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xFD, 0xFB, 0xF7), 0.0));
-                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xF4, 0xEF, 0xE5), 0.45));
-                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xEA, 0xE3, 0xD4), 0.80));
-                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xDF, 0xD6, 0xC5), 1.0));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xF5, 0xEF, 0xE5), 0.42));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xEA, 0xE2, 0xD4), 0.78));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xDE, 0xD5, 0xC5), 1.0));
             }
             else
             {
                 baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xFC, 0xFA, 0xF6), 0.0));
-                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xF5, 0xEF, 0xE7), 0.45));
-                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xEA, 0xE0, 0xD6), 0.80));
-                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xDE, 0xD2, 0xC6), 1.0));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xF4, 0xEE, 0xE6), 0.42));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xE8, 0xDF, 0xD5), 0.78));
+                baseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xDB, 0xD0, 0xC4), 1.0));
             }
             Background = baseBrush;
 
-            // 2. Realistic Specular Caustic Glow Orbs (Simulating Three.js point lights & transmission)
+            // 2. Realistic Specular Caustic Glow Orbs (Simulating Three.js dynamic point lights & transmission)
             _glowOrb1 = new Border
             {
-                Width = 280,
-                Height = 280,
-                CornerRadius = new CornerRadius(140),
+                Width = 320,
+                Height = 320,
+                CornerRadius = new CornerRadius(160),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(-40, 60, 0, 0),
-                Opacity = isUninstallMode ? 0.20 : 0.26,
+                Margin = new Thickness(-60, 40, 0, 0),
+                Opacity = isUninstallMode ? 0.22 : 0.32,
                 Background = new RadialGradientBrush(
-                    Color.FromArgb(0xCC, 0xFF, 0x7A, 0x00), // Vibrant Electric Sunset
-                    Color.FromArgb(0x00, 0xFF, 0x7A, 0x00))
+                    Color.FromArgb(0xDD, 0xFF, 0x85, 0x1A), // Vibrant Electric Sunset
+                    Color.FromArgb(0x00, 0xFF, 0x85, 0x1A))
             };
             _glow1Trans = new TranslateTransform();
             _glowOrb1.RenderTransform = _glow1Trans;
             _glowOrb1.Effect = new DropShadowEffect
             {
-                BlurRadius = 85,
+                BlurRadius = 90,
                 ShadowDepth = 0,
-                Opacity = 0.65,
+                Opacity = 0.70,
                 Color = Color.FromRgb(0xFF, 0x7A, 0x00)
             };
             Children.Add(_glowOrb1);
 
             _glowOrb2 = new Border
             {
-                Width = 260,
-                Height = 260,
-                CornerRadius = new CornerRadius(130),
+                Width = 300,
+                Height = 300,
+                CornerRadius = new CornerRadius(150),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, -40, 80),
-                Opacity = isUninstallMode ? 0.16 : 0.24,
+                Margin = new Thickness(0, 0, -60, 60),
+                Opacity = isUninstallMode ? 0.20 : 0.28,
                 Background = new RadialGradientBrush(
-                    Color.FromArgb(0xCC, 0x7C, 0x3A, 0xED), // Royal Electric Purple
-                    Color.FromArgb(0x00, 0x7C, 0x3A, 0xED))
+                    Color.FromArgb(0xDD, 0x8B, 0x5C, 0xF6), // Royal Electric Purple
+                    Color.FromArgb(0x00, 0x8B, 0x5C, 0xF6))
             };
             _glow2Trans = new TranslateTransform();
             _glowOrb2.RenderTransform = _glow2Trans;
             _glowOrb2.Effect = new DropShadowEffect
             {
-                BlurRadius = 80,
+                BlurRadius = 85,
                 ShadowDepth = 0,
-                Opacity = 0.60,
-                Color = Color.FromRgb(0x7C, 0x3A, 0xED)
+                Opacity = 0.65,
+                Color = Color.FromRgb(0x8B, 0x5C, 0xF6)
             };
             Children.Add(_glowOrb2);
 
-            // 3. Hardware-Accelerated Viewport3D with PBR Torus / Radial Wheel Geometry
+            _glowOrb3 = new Border
+            {
+                Width = 240,
+                Height = 240,
+                CornerRadius = new CornerRadius(120),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Opacity = isUninstallMode ? 0.14 : 0.22,
+                Background = new RadialGradientBrush(
+                    Color.FromArgb(0xBB, 0x38, 0xBD, 0xF8), // Sky Blue Caustic Highlight
+                    Color.FromArgb(0x00, 0x38, 0xBD, 0xF8))
+            };
+            _glow3Trans = new TranslateTransform();
+            _glowOrb3.RenderTransform = _glow3Trans;
+            _glowOrb3.Effect = new DropShadowEffect
+            {
+                BlurRadius = 75,
+                ShadowDepth = 0,
+                Opacity = 0.55,
+                Color = Color.FromRgb(0x38, 0xBD, 0xF8)
+            };
+            Children.Add(_glowOrb3);
+
+            // 3. Hardware-Accelerated Viewport3D with PBR Torus / Radial Gyroscope System
             _viewport = new Viewport3D
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
-                Opacity = 0.40
+                Opacity = isUninstallMode ? 0.42 : 0.52
             };
 
-            var camera = new PerspectiveCamera
+            _camera = new PerspectiveCamera
             {
                 Position = new Point3D(0, 0, 8.2),
                 LookDirection = new Vector3D(0, 0, -1),
                 UpDirection = new Vector3D(0, 1, 0),
                 FieldOfView = 42
             };
-            _viewport.Camera = camera;
+            _viewport.Camera = _camera;
 
             var modelGroup = new Model3DGroup();
 
-            // Lighting (Three.js Style Key & Rim Lights)
-            var keyLight = new DirectionalLight(Color.FromRgb(0xFF, 0x8A, 0x1A), new Vector3D(-1.2, 1.5, -2));
-            var fillLight = new DirectionalLight(Color.FromRgb(0x8B, 0x5C, 0xF6), new Vector3D(1.5, -1.2, -1.8));
-            var rimLight = new DirectionalLight(Color.FromRgb(0xFF, 0xFF, 0xFF), new Vector3D(0, 0, -3));
-            var ambientLight = new AmbientLight(Color.FromRgb(0x60, 0x58, 0x66));
+            // Lighting (Three.js Studio Key, Fill, Rim & Caustic Bounce)
+            var keyLight = new DirectionalLight(Color.FromRgb(0xFF, 0xA8, 0x34), new Vector3D(-1.4, 1.8, -2.2));
+            var fillLight = new DirectionalLight(Color.FromRgb(0x8B, 0x5C, 0xF6), new Vector3D(1.6, -1.2, -1.8));
+            var rimLight = new DirectionalLight(Color.FromRgb(0xFF, 0xFF, 0xFF), new Vector3D(0, -0.6, -3.4));
+            var bounceLight = new DirectionalLight(Color.FromRgb(0x38, 0xBD, 0xF8), new Vector3D(0, 2.0, 0.6));
+            var ambientLight = new AmbientLight(Color.FromRgb(0x56, 0x4E, 0x60));
 
             modelGroup.Children.Add(keyLight);
             modelGroup.Children.Add(fillLight);
             modelGroup.Children.Add(rimLight);
+            modelGroup.Children.Add(bounceLight);
             modelGroup.Children.Add(ambientLight);
 
-            // 3D Geometry: Smooth Radial Donut Torus (OmniWheel Ring)
-            var mesh = GenerateTorusMesh(2.2, 0.55, 32, 16);
+            // Master Kinetic Container (Three.js Organic Floating Breath)
+            var masterGroup = new Model3DGroup();
+            _masterFloat = new TranslateTransform3D(0, 0, 0);
+            masterGroup.Transform = _masterFloat;
 
-            // PBR Material (Physical Transmission & Specular Highlight)
-            var matGroup = new MaterialGroup();
-            matGroup.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
-                Color.FromArgb(0xF0, 0xFA, 0xF8, 0xF2),
-                Color.FromArgb(0xD0, 0xE8, 0xDF, 0xD0),
+            // 3A. Primary Outer Rotor (OmniWheel Primary Torus)
+            var outerMesh = GenerateTorusMesh(2.38, 0.40, 36, 18);
+            var outerMat = new MaterialGroup();
+            outerMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
+                Color.FromArgb(0xF6, 0xFF, 0xFD, 0xF8),
+                Color.FromArgb(0xD8, 0xEA, 0xE2, 0xD4),
                 new Point(0, 0), new Point(1, 1))));
-            matGroup.Children.Add(new SpecularMaterial(Brushes.White, 75.0));
+            outerMat.Children.Add(new SpecularMaterial(Brushes.White, 85.0));
+            var outerModel = new GeometryModel3D(outerMesh, outerMat) { BackMaterial = outerMat };
 
-            var geometryModel = new GeometryModel3D(mesh, matGroup);
-            geometryModel.BackMaterial = matGroup;
+            var outerTg = new Transform3DGroup();
+            _rotOuterY = new AxisAngleRotation3D(new Vector3D(0.18, 1.0, 0.12), 0);
+            _rotOuterX = new AxisAngleRotation3D(new Vector3D(1.0, 0.12, 0.18), 16);
+            outerTg.Children.Add(new RotateTransform3D(_rotOuterY));
+            outerTg.Children.Add(new RotateTransform3D(_rotOuterX));
+            outerModel.Transform = outerTg;
+            masterGroup.Children.Add(outerModel);
 
-            // Transform Group (Rotation + Three.js Organic Floating Breath)
-            var transformGroup = new Transform3DGroup();
-            _rotAxisY = new AxisAngleRotation3D(new Vector3D(0.2, 1.0, 0.1), 0);
-            _rotAxisX = new AxisAngleRotation3D(new Vector3D(1.0, 0.1, 0.2), 15);
-            _floatTrans = new TranslateTransform3D(0, 0, 0);
+            // 3B. Counter-Rotating Inner Gyroscopic Ring (Royal Amethyst Torus)
+            var innerMesh = GenerateTorusMesh(1.58, 0.26, 30, 16);
+            var innerMat = new MaterialGroup();
+            innerMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
+                Color.FromArgb(0xF0, 0xF5, 0xEE, 0xFD),
+                Color.FromArgb(0xD2, 0xC0, 0x84, 0xFC),
+                new Point(0, 0), new Point(1, 1))));
+            innerMat.Children.Add(new SpecularMaterial(new SolidColorBrush(Color.FromRgb(0xDD, 0xD6, 0xFE)), 95.0));
+            var innerModel = new GeometryModel3D(innerMesh, innerMat) { BackMaterial = innerMat };
 
-            transformGroup.Children.Add(new RotateTransform3D(_rotAxisY));
-            transformGroup.Children.Add(new RotateTransform3D(_rotAxisX));
-            transformGroup.Children.Add(_floatTrans);
+            var innerTg = new Transform3DGroup();
+            _rotInnerY = new AxisAngleRotation3D(new Vector3D(-0.25, 1.0, -0.3), 0);
+            _rotInnerX = new AxisAngleRotation3D(new Vector3D(1.0, 0.2, -0.2), -20);
+            _rotInnerZ = new AxisAngleRotation3D(new Vector3D(0.2, 0.2, 1.0), 0);
+            innerTg.Children.Add(new RotateTransform3D(_rotInnerY));
+            innerTg.Children.Add(new RotateTransform3D(_rotInnerX));
+            innerTg.Children.Add(new RotateTransform3D(_rotInnerZ));
+            innerModel.Transform = innerTg;
+            masterGroup.Children.Add(innerModel);
 
-            geometryModel.Transform = transformGroup;
-            modelGroup.Children.Add(geometryModel);
+            // 3C. Celestial Equatorial Golden Orbit Track Ring
+            var trackMesh = GenerateTorusMesh(1.98, 0.08, 40, 12);
+            var trackMat = new MaterialGroup();
+            trackMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
+                Color.FromArgb(0xEE, 0xFF, 0xF7, 0xED),
+                Color.FromArgb(0xCC, 0xFD, 0xBA, 0x74),
+                new Point(0, 0), new Point(1, 1))));
+            trackMat.Children.Add(new SpecularMaterial(new SolidColorBrush(Color.FromRgb(0xFF, 0xED, 0xD5)), 100.0));
+            var trackModel = new GeometryModel3D(trackMesh, trackMat) { BackMaterial = trackMat };
 
+            var trackTg = new Transform3DGroup();
+            _rotTrackZ = new AxisAngleRotation3D(new Vector3D(0.3, 0.1, 1.0), 0);
+            _rotTrackX = new AxisAngleRotation3D(new Vector3D(1.0, 0.0, 0.3), 64);
+            trackTg.Children.Add(new RotateTransform3D(_rotTrackZ));
+            trackTg.Children.Add(new RotateTransform3D(_rotTrackX));
+            trackModel.Transform = trackTg;
+            masterGroup.Children.Add(trackModel);
+
+            // 3D. Orbiting Satellite Nodes (4 Procedural 3D Spheres in Harmonic Celestial Drift)
+            _nodeTrans = new TranslateTransform3D[4];
+            var sphereMesh = GenerateSphereMesh(0.18, 14, 14);
+
+            for (int i = 0; i < 4; i++)
+            {
+                var sphereMat = new MaterialGroup();
+                Color c1 = (i % 2 == 0) ? Color.FromRgb(0xFF, 0x92, 0x33) : Color.FromRgb(0xA8, 0x55, 0xF7);
+                Color c2 = (i % 2 == 0) ? Color.FromRgb(0xEA, 0x58, 0x0C) : Color.FromRgb(0x7C, 0x3A, 0xED);
+                sphereMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(c1, c2, new Point(0, 0), new Point(1, 1))));
+                sphereMat.Children.Add(new SpecularMaterial(Brushes.White, 90.0));
+
+                var sphereModel = new GeometryModel3D(sphereMesh, sphereMat) { BackMaterial = sphereMat };
+                _nodeTrans[i] = new TranslateTransform3D(0, 0, 0);
+                sphereModel.Transform = _nodeTrans[i];
+                masterGroup.Children.Add(sphereModel);
+            }
+
+            modelGroup.Children.Add(masterGroup);
             var visual = new ModelVisual3D { Content = modelGroup };
             _viewport.Children.Add(visual);
             Children.Add(_viewport);
 
-            // 4. 60 FPS Three.js Dynamic Animation Loop
+            // 4. Interactive 3D Parallax Tracking via Parent Window Mouse Events
+            Loaded += delegate
+            {
+                var win = Window.GetWindow(this);
+                if (win != null)
+                {
+                    win.MouseMove += delegate(object sender, MouseEventArgs e)
+                    {
+                        Point pt = e.GetPosition(win);
+                        if (win.ActualWidth > 0 && win.ActualHeight > 0)
+                        {
+                            _targetCamX = (pt.X / win.ActualWidth - 0.5) * 1.5;
+                            _targetCamY = -(pt.Y / win.ActualHeight - 0.5) * 1.1;
+                        }
+                    };
+                }
+            };
+
+            // 5. 60 FPS Three.js Dynamic PBR Animation Loop
             _stopwatch = Stopwatch.StartNew();
             _animTimer = new DispatcherTimer(DispatcherPriority.Render)
             {
@@ -731,18 +842,54 @@ namespace OMNIWHEEL.Installer
             };
             _animTimer.Tick += delegate
             {
-                double elapsedSec = _stopwatch.ElapsedMilliseconds / 1000.0;
-                // Three.js Organic Floating Breath formula: wheelRoot.position.y = Math.sin(elapsedTime * 1.5) * 0.12;
-                double floatY = Math.Sin(elapsedSec * 1.5) * 0.12;
-                _floatTrans.OffsetY = floatY;
-                _rotAxisY.Angle = (_rotAxisY.Angle + 0.35) % 360.0;
-                _rotAxisX.Angle = 15.0 + Math.Sin(elapsedSec * 0.8) * 8.0;
+                double elapsed = _stopwatch.ElapsedMilliseconds / 1000.0;
 
-                // Orbiting Caustic Orbs
-                _glow1Trans.X = Math.Sin(elapsedSec * 0.9) * 25.0;
-                _glow1Trans.Y = Math.Cos(elapsedSec * 1.1) * 20.0;
-                _glow2Trans.X = -Math.Cos(elapsedSec * 0.8) * 22.0;
-                _glow2Trans.Y = -Math.Sin(elapsedSec * 1.0) * 18.0;
+                // Organic Floating Breath physics (Multi-harmonic sine wave)
+                double floatY = Math.Sin(elapsed * 1.35) * 0.14 + Math.Cos(elapsed * 2.1) * 0.04;
+                double floatZ = Math.Cos(elapsed * 1.1) * 0.08;
+                _masterFloat.OffsetY = floatY;
+                _masterFloat.OffsetZ = floatZ;
+
+                // Outer Rotor continuous rotation + gyroscopic pitch wobble
+                _rotOuterY.Angle = (_rotOuterY.Angle + 0.38) % 360.0;
+                _rotOuterX.Angle = 16.0 + Math.Sin(elapsed * 0.8) * 8.0;
+
+                // Inner Amethyst Rotor counter-rotation + harmonic roll
+                _rotInnerY.Angle = (_rotInnerY.Angle - 0.60) % 360.0;
+                _rotInnerX.Angle = -20.0 + Math.Cos(elapsed * 1.05) * 12.0;
+                _rotInnerZ.Angle = Math.Sin(elapsed * 0.75) * 15.0;
+
+                // Celestial Equatorial Track Ring tumbling roll
+                _rotTrackZ.Angle = (elapsed * 22.0) % 360.0;
+                _rotTrackX.Angle = 64.0 + Math.Sin(elapsed * 0.65) * 9.0;
+
+                // 4 Orbiting Satellite Nodes (Harmonic 3D Lissajous Orbits)
+                for (int k = 0; k < 4; k++)
+                {
+                    double nodeAngle = elapsed * 0.82 + (k * Math.PI / 2.0);
+                    double orbitRadius = 2.65 + Math.Sin(elapsed * 1.4 + k) * 0.16;
+                    double nx = orbitRadius * Math.Cos(nodeAngle);
+                    double nz = orbitRadius * Math.Sin(nodeAngle);
+                    double ny = Math.Sin(elapsed * 1.3 + k * 1.2) * 0.45;
+
+                    _nodeTrans[k].OffsetX = nx;
+                    _nodeTrans[k].OffsetY = ny;
+                    _nodeTrans[k].OffsetZ = nz;
+                }
+
+                // Interactive 3D Camera Parallax interpolation
+                _camX += (_targetCamX - _camX) * 0.05;
+                _camY += (_targetCamY - _camY) * 0.05;
+                _camera.Position = new Point3D(_camX, _camY, 8.2);
+                _camera.LookDirection = new Vector3D(-_camX * 0.5, -_camY * 0.5, -8.2);
+
+                // Dynamic Caustic Glow Drift
+                _glow1Trans.X = Math.Sin(elapsed * 0.85) * 45.0;
+                _glow1Trans.Y = Math.Cos(elapsed * 1.1) * 35.0;
+                _glow2Trans.X = -Math.Cos(elapsed * 0.7) * 40.0;
+                _glow2Trans.Y = -Math.Sin(elapsed * 0.95) * 30.0;
+                _glow3Trans.X = Math.Cos(elapsed * 0.6) * 30.0;
+                _glow3Trans.Y = Math.Sin(elapsed * 0.75) * 25.0;
             };
             _animTimer.Start();
         }
@@ -786,6 +933,51 @@ namespace OMNIWHEEL.Installer
                     mesh.TriangleIndices.Add(current + 1);
                     mesh.TriangleIndices.Add(next);
                     mesh.TriangleIndices.Add(next + 1);
+                }
+            }
+
+            return mesh;
+        }
+
+        private static MeshGeometry3D GenerateSphereMesh(double radius, int latSegments, int lonSegments)
+        {
+            var mesh = new MeshGeometry3D();
+            for (int lat = 0; lat <= latSegments; lat++)
+            {
+                double theta = (double)lat / latSegments * Math.PI;
+                double sinTheta = Math.Sin(theta);
+                double cosTheta = Math.Cos(theta);
+
+                for (int lon = 0; lon <= lonSegments; lon++)
+                {
+                    double phi = (double)lon / lonSegments * 2.0 * Math.PI;
+                    double sinPhi = Math.Sin(phi);
+                    double cosPhi = Math.Cos(phi);
+
+                    double x = radius * sinTheta * cosPhi;
+                    double y = radius * cosTheta;
+                    double z = radius * sinTheta * sinPhi;
+
+                    mesh.Positions.Add(new Point3D(x, y, z));
+                    mesh.Normals.Add(new Vector3D(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi));
+                    mesh.TextureCoordinates.Add(new Point((double)lon / lonSegments, (double)lat / latSegments));
+                }
+            }
+
+            for (int lat = 0; lat < latSegments; lat++)
+            {
+                for (int lon = 0; lon < lonSegments; lon++)
+                {
+                    int first = lat * (lonSegments + 1) + lon;
+                    int second = first + lonSegments + 1;
+
+                    mesh.TriangleIndices.Add(first);
+                    mesh.TriangleIndices.Add(second);
+                    mesh.TriangleIndices.Add(first + 1);
+
+                    mesh.TriangleIndices.Add(second);
+                    mesh.TriangleIndices.Add(second + 1);
+                    mesh.TriangleIndices.Add(first + 1);
                 }
             }
 
@@ -1130,7 +1322,6 @@ namespace OMNIWHEEL.Installer
 
             var headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
 
             var headerTextStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -1155,36 +1346,6 @@ namespace OMNIWHEEL.Installer
             Grid.SetColumn(headerTextStack, 0);
             headerGrid.Children.Add(headerTextStack);
 
-            // Three.js 3D WebGL Studio Launch Button
-            var btn3D = new Button
-            {
-                Content = "✨ 3D Studio",
-                Height = 28,
-                Padding = new Thickness(12, 0, 12, 0),
-                Margin = new Thickness(0, 0, 10, 0),
-                FontSize = 11.5,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x7C, 0x3A, 0xED)),
-                Background = new LinearGradientBrush(
-                    Color.FromArgb(0xF4, 0xFF, 0xFF, 0xFF),
-                    Color.FromArgb(0xE4, 0xEE, 0xE7, 0xFD),
-                    new Point(0, 0), new Point(0, 1)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0xB8, 0xC4, 0xB5, 0xFD)),
-                BorderThickness = new Thickness(1.2),
-                Cursor = Cursors.Hand,
-                ToolTip = "Launch Three.js 3D WebGL Frosted Glass Studio"
-            };
-            btn3D.Effect = new DropShadowEffect
-            {
-                BlurRadius = 8,
-                ShadowDepth = 1,
-                Opacity = 0.25,
-                Color = Color.FromRgb(0x7C, 0x3A, 0xED)
-            };
-            btn3D.Click += delegate { SetupApp.Launch3DStudio(); };
-            Grid.SetColumn(btn3D, 1);
-            headerGrid.Children.Add(btn3D);
-
             var closeBtn = new Button
             {
                 Content = "✕",
@@ -1208,7 +1369,7 @@ namespace OMNIWHEEL.Installer
                 Color = Color.FromRgb(0x99, 0x90, 0x80)
             };
             closeBtn.Click += (s, e) => Close();
-            Grid.SetColumn(closeBtn, 2);
+            Grid.SetColumn(closeBtn, 1);
             headerGrid.Children.Add(closeBtn);
             headerBorder.Child = headerGrid;
             Grid.SetRow(headerBorder, 0);
@@ -2014,7 +2175,6 @@ namespace OMNIWHEEL.Installer
 
             var headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35) });
 
             var headerTextStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -2039,36 +2199,6 @@ namespace OMNIWHEEL.Installer
             Grid.SetColumn(headerTextStack, 0);
             headerGrid.Children.Add(headerTextStack);
 
-            // Three.js 3D WebGL Studio Launch Button
-            var btn3D = new Button
-            {
-                Content = "✨ 3D Studio",
-                Height = 28,
-                Padding = new Thickness(12, 0, 12, 0),
-                Margin = new Thickness(0, 0, 10, 0),
-                FontSize = 11.5,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(0x7C, 0x3A, 0xED)),
-                Background = new LinearGradientBrush(
-                    Color.FromArgb(0xF4, 0xFF, 0xFF, 0xFF),
-                    Color.FromArgb(0xE4, 0xEE, 0xE7, 0xFD),
-                    new Point(0, 0), new Point(0, 1)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0xB8, 0xC4, 0xB5, 0xFD)),
-                BorderThickness = new Thickness(1.2),
-                Cursor = Cursors.Hand,
-                ToolTip = "Launch Three.js 3D WebGL Frosted Glass Studio"
-            };
-            btn3D.Effect = new DropShadowEffect
-            {
-                BlurRadius = 8,
-                ShadowDepth = 1,
-                Opacity = 0.25,
-                Color = Color.FromRgb(0x7C, 0x3A, 0xED)
-            };
-            btn3D.Click += delegate { SetupApp.Launch3DStudio(); };
-            Grid.SetColumn(btn3D, 1);
-            headerGrid.Children.Add(btn3D);
-
             var closeBtn = new Button
             {
                 Content = "✕",
@@ -2085,7 +2215,7 @@ namespace OMNIWHEEL.Installer
                 Cursor = Cursors.Hand
             };
             closeBtn.Click += delegate { Close(); };
-            Grid.SetColumn(closeBtn, 2);
+            Grid.SetColumn(closeBtn, 1);
             headerGrid.Children.Add(closeBtn);
             headerBorder.Child = headerGrid;
             Grid.SetRow(headerBorder, 0);
