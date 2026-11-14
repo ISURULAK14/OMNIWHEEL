@@ -3634,12 +3634,13 @@ namespace LocalConvertNative.Engine
                 }
 
                 var fi = new FileInfo(outPath);
+                bool ok = File.Exists(outPath) && fi.Length > 0;
                 return new ConversionResult
                 {
-                    Success = File.Exists(outPath) && fi.Length > 0,
+                    Success = ok,
                     OutputPath = outPath,
-                    OutputSize = fi.Exists ? fi.Length : 0,
-                    Message = "Data transformed to " + Path.GetFileName(outPath)
+                    OutputSize = ok ? fi.Length : 0,
+                    Message = ok ? ("Data transformed to " + Path.GetFileName(outPath)) : ("Data transformation failed: " + ext + " -> " + targetFormat)
                 };
             }
 
@@ -3692,12 +3693,13 @@ namespace LocalConvertNative.Engine
                 }
 
                 var fi = new FileInfo(outPath);
+                bool ok = File.Exists(outPath) && fi.Length > 0;
                 return new ConversionResult
                 {
-                    Success = File.Exists(outPath) && fi.Length > 0,
+                    Success = ok,
                     OutputPath = outPath,
-                    OutputSize = fi.Exists ? fi.Length : 0,
-                    Message = "JSON transformed to " + Path.GetFileName(outPath)
+                    OutputSize = ok ? fi.Length : 0,
+                    Message = ok ? ("JSON transformed to " + Path.GetFileName(outPath)) : ("JSON transformation failed: " + ext + " -> " + targetFormat)
                 };
             }
 
@@ -3753,12 +3755,13 @@ namespace LocalConvertNative.Engine
                 }
 
                 var fi = new FileInfo(outPath);
+                bool ok = File.Exists(outPath) && fi.Length > 0;
                 return new ConversionResult
                 {
-                    Success = File.Exists(outPath) && fi.Length > 0,
+                    Success = ok,
                     OutputPath = outPath,
-                    OutputSize = fi.Exists ? fi.Length : 0,
-                    Message = "XML converted to " + Path.GetFileName(outPath)
+                    OutputSize = ok ? fi.Length : 0,
+                    Message = ok ? ("XML converted to " + Path.GetFileName(outPath)) : ("XML conversion failed: xml -> " + targetFormat)
                 };
             }
 
@@ -3781,12 +3784,13 @@ namespace LocalConvertNative.Engine
                 else return new ConversionResult { Success = false, Message = "Unsupported data conversion: " + ext + " -> " + targetFormat };
 
                 var fi = new FileInfo(outPath);
+                bool ok = File.Exists(outPath) && fi.Length > 0;
                 return new ConversionResult
                 {
-                    Success = File.Exists(outPath) && fi.Length > 0,
+                    Success = ok,
                     OutputPath = outPath,
-                    OutputSize = fi.Exists ? fi.Length : 0,
-                    Message = "YAML converted to " + Path.GetFileName(outPath)
+                    OutputSize = ok ? fi.Length : 0,
+                    Message = ok ? ("YAML converted to " + Path.GetFileName(outPath)) : ("YAML conversion failed: " + ext + " -> " + targetFormat)
                 };
             }
 
@@ -3814,12 +3818,13 @@ namespace LocalConvertNative.Engine
                 else return new ConversionResult { Success = false, Message = "Unsupported data conversion: vcf -> " + targetFormat };
 
                 var fi = new FileInfo(outPath);
+                bool ok = File.Exists(outPath) && fi.Length > 0;
                 return new ConversionResult
                 {
-                    Success = File.Exists(outPath) && fi.Length > 0,
+                    Success = ok,
                     OutputPath = outPath,
-                    OutputSize = fi.Exists ? fi.Length : 0,
-                    Message = "vCard converted to " + Path.GetFileName(outPath)
+                    OutputSize = ok ? fi.Length : 0,
+                    Message = ok ? ("vCard converted to " + Path.GetFileName(outPath)) : ("vCard conversion failed: vcf -> " + targetFormat)
                 };
             }
 
@@ -4745,12 +4750,13 @@ namespace LocalConvertNative.Engine
             });
 
             var fi = new FileInfo(outPath);
+            bool ok = File.Exists(outPath) && fi.Length > 0;
             return new ConversionResult
             {
-                Success = File.Exists(outPath) && fi.Length > 0,
+                Success = ok,
                 OutputPath = outPath,
-                OutputSize = fi.Exists ? fi.Length : 0,
-                Message = "Converted subtitle to " + Path.GetFileName(outPath)
+                OutputSize = ok ? fi.Length : 0,
+                Message = ok ? ("Converted subtitle to " + Path.GetFileName(outPath)) : ("Subtitle conversion failed: " + inExt + " -> " + targetFormat)
             };
         }
 

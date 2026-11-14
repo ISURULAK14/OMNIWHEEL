@@ -149,7 +149,7 @@ rem Step 9: UI smoke test
 rem ------------------------------------------------
 echo UI smoke test: launching OMNIWHEEL for 5 seconds...
 start "" "bin\OMNIWHEEL.exe"
-timeout /t 5 /nobreak >nul
+powershell -NoProfile -Command "Start-Sleep -Seconds 5"
 taskkill /im OMNIWHEEL.exe /f >nul 2>&1
 
 echo.
