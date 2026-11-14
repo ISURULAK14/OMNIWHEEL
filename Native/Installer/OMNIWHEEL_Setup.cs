@@ -569,21 +569,17 @@ namespace OMNIWHEEL.Installer
     }
 
     // ======================================================================
-    // THREE.JS REALISTIC PBR TEXTURE & 3D HARDWARE-ACCELERATED BACKDROP
+    // REALISTIC 3D VELVET CLOTH SWAYING BACKDROP ENGINE
     // ======================================================================
     public class RealisticThreeJsBackground : Grid
     {
+        private const int COLS = 44;
+        private const int ROWS = 30;
+        private const int TOTAL_VERTS = COLS * ROWS;
+
         private Viewport3D _viewport;
         private PerspectiveCamera _camera;
-        private AxisAngleRotation3D _rotOuterY;
-        private AxisAngleRotation3D _rotOuterX;
-        private AxisAngleRotation3D _rotInnerY;
-        private AxisAngleRotation3D _rotInnerX;
-        private AxisAngleRotation3D _rotInnerZ;
-        private AxisAngleRotation3D _rotTrackZ;
-        private AxisAngleRotation3D _rotTrackX;
-        private TranslateTransform3D _masterFloat;
-        private TranslateTransform3D[] _nodeTrans;
+        private MeshGeometry3D _clothMesh;
         private DispatcherTimer _animTimer;
         private Stopwatch _stopwatch;
 
@@ -599,6 +595,14 @@ namespace OMNIWHEEL.Installer
         private double _camX = 0;
         private double _camY = 0;
 
+        private double _targetMouseU = 0.5;
+        private double _targetMouseV = 0.5;
+        private double _mouseU = 0.5;
+        private double _mouseV = 0.5;
+
+        private readonly Point3D[] _positionsBuffer = new Point3D[TOTAL_VERTS];
+        private readonly Vector3D[] _normalsBuffer = new Vector3D[TOTAL_VERTS];
+
         public RealisticThreeJsBackground(bool isUninstallMode)
         {
             ClipToBounds = true;
@@ -609,8 +613,8 @@ namespace OMNIWHEEL.Installer
             {
                 Center = new Point(0.5, 0.45),
                 GradientOrigin = new Point(0.5, 0.45),
-                RadiusX = 0.88,
-                RadiusY = 0.88
+                RadiusX = 0.90,
+                RadiusY = 0.90
             };
             if (!isUninstallMode)
             {
@@ -628,25 +632,25 @@ namespace OMNIWHEEL.Installer
             }
             Background = baseBrush;
 
-            // 2. Realistic Specular Caustic Glow Orbs (Simulating Three.js dynamic point lights & transmission)
+            // 2. Realistic Specular Caustic Glow Orbs (Simulating soft light diffusion behind velvet drape)
             _glowOrb1 = new Border
             {
-                Width = 320,
-                Height = 320,
-                CornerRadius = new CornerRadius(160),
+                Width = 340,
+                Height = 340,
+                CornerRadius = new CornerRadius(170),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(-60, 40, 0, 0),
-                Opacity = isUninstallMode ? 0.22 : 0.32,
+                Margin = new Thickness(-70, 30, 0, 0),
+                Opacity = isUninstallMode ? 0.24 : 0.34,
                 Background = new RadialGradientBrush(
-                    Color.FromArgb(0xDD, 0xFF, 0x85, 0x1A), // Vibrant Electric Sunset
+                    Color.FromArgb(0xEE, 0xFF, 0x85, 0x1A), // Warm Radiant Amber
                     Color.FromArgb(0x00, 0xFF, 0x85, 0x1A))
             };
             _glow1Trans = new TranslateTransform();
             _glowOrb1.RenderTransform = _glow1Trans;
             _glowOrb1.Effect = new DropShadowEffect
             {
-                BlurRadius = 90,
+                BlurRadius = 95,
                 ShadowDepth = 0,
                 Opacity = 0.70,
                 Color = Color.FromRgb(0xFF, 0x7A, 0x00)
@@ -655,22 +659,22 @@ namespace OMNIWHEEL.Installer
 
             _glowOrb2 = new Border
             {
-                Width = 300,
-                Height = 300,
-                CornerRadius = new CornerRadius(150),
+                Width = 320,
+                Height = 320,
+                CornerRadius = new CornerRadius(160),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Bottom,
-                Margin = new Thickness(0, 0, -60, 60),
-                Opacity = isUninstallMode ? 0.20 : 0.28,
+                Margin = new Thickness(0, 0, -70, 50),
+                Opacity = isUninstallMode ? 0.22 : 0.30,
                 Background = new RadialGradientBrush(
-                    Color.FromArgb(0xDD, 0x8B, 0x5C, 0xF6), // Royal Electric Purple
+                    Color.FromArgb(0xEE, 0x8B, 0x5C, 0xF6), // Royal Amethyst Violet
                     Color.FromArgb(0x00, 0x8B, 0x5C, 0xF6))
             };
             _glow2Trans = new TranslateTransform();
             _glowOrb2.RenderTransform = _glow2Trans;
             _glowOrb2.Effect = new DropShadowEffect
             {
-                BlurRadius = 85,
+                BlurRadius = 90,
                 ShadowDepth = 0,
                 Opacity = 0.65,
                 Color = Color.FromRgb(0x8B, 0x5C, 0xF6)
@@ -679,144 +683,151 @@ namespace OMNIWHEEL.Installer
 
             _glowOrb3 = new Border
             {
-                Width = 240,
-                Height = 240,
-                CornerRadius = new CornerRadius(120),
+                Width = 260,
+                Height = 260,
+                CornerRadius = new CornerRadius(130),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Opacity = isUninstallMode ? 0.14 : 0.22,
+                Opacity = isUninstallMode ? 0.16 : 0.24,
                 Background = new RadialGradientBrush(
-                    Color.FromArgb(0xBB, 0x38, 0xBD, 0xF8), // Sky Blue Caustic Highlight
+                    Color.FromArgb(0xCC, 0x38, 0xBD, 0xF8), // Sky Blue Caustic Sheen
                     Color.FromArgb(0x00, 0x38, 0xBD, 0xF8))
             };
             _glow3Trans = new TranslateTransform();
             _glowOrb3.RenderTransform = _glow3Trans;
             _glowOrb3.Effect = new DropShadowEffect
             {
-                BlurRadius = 75,
+                BlurRadius = 80,
                 ShadowDepth = 0,
                 Opacity = 0.55,
                 Color = Color.FromRgb(0x38, 0xBD, 0xF8)
             };
             Children.Add(_glowOrb3);
 
-            // 3. Hardware-Accelerated Viewport3D with PBR Torus / Radial Gyroscope System
+            // 3. Hardware-Accelerated Viewport3D with Dynamic Velvet Cloth Simulation
             _viewport = new Viewport3D
             {
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
-                Opacity = isUninstallMode ? 0.42 : 0.52
+                Opacity = isUninstallMode ? 0.52 : 0.62
             };
 
             _camera = new PerspectiveCamera
             {
-                Position = new Point3D(0, 0, 8.2),
+                Position = new Point3D(0, 0, 5.2),
                 LookDirection = new Vector3D(0, 0, -1),
                 UpDirection = new Vector3D(0, 1, 0),
-                FieldOfView = 42
+                FieldOfView = 48
             };
             _viewport.Camera = _camera;
 
             var modelGroup = new Model3DGroup();
 
-            // Lighting (Three.js Studio Key, Fill, Rim & Caustic Bounce)
-            var keyLight = new DirectionalLight(Color.FromRgb(0xFF, 0xA8, 0x34), new Vector3D(-1.4, 1.8, -2.2));
-            var fillLight = new DirectionalLight(Color.FromRgb(0x8B, 0x5C, 0xF6), new Vector3D(1.6, -1.2, -1.8));
-            var rimLight = new DirectionalLight(Color.FromRgb(0xFF, 0xFF, 0xFF), new Vector3D(0, -0.6, -3.4));
-            var bounceLight = new DirectionalLight(Color.FromRgb(0x38, 0xBD, 0xF8), new Vector3D(0, 2.0, 0.6));
-            var ambientLight = new AmbientLight(Color.FromRgb(0x56, 0x4E, 0x60));
+            // Velvet-Optimized Lighting System:
+            // 1) Studio Key Light: Warm champagne grazing highlight
+            var keyLight = new DirectionalLight(Color.FromRgb(0xFF, 0xDF, 0xA0), new Vector3D(-1.6, 1.4, -2.0));
+            // 2) Velvet Grazing Light: Skimming angle to ignite micro-fiber specular pile sheen
+            var grazingLight = isUninstallMode
+                ? new DirectionalLight(Color.FromRgb(0x81, 0x8C, 0xF8), new Vector3D(2.2, -0.8, -1.6))
+                : new DirectionalLight(Color.FromRgb(0xC0, 0x84, 0xFC), new Vector3D(2.2, -0.8, -1.6));
+            // 3) Soft Fill Light: Amethyst/lavender illumination in the fold troughs
+            var fillLight = new DirectionalLight(Color.FromRgb(0x58, 0x1C, 0x87), new Vector3D(0.0, -1.5, -1.0));
+            // 4) Back/Rim Light: Silky rim glow catching undulating wave contours
+            var rimLight = new DirectionalLight(Color.FromRgb(0xFF, 0xFF, 0xFF), new Vector3D(0.0, -2.2, -1.2));
+            // 5) Ambient Light: Velvet depth foundation
+            var ambientLight = isUninstallMode
+                ? new AmbientLight(Color.FromRgb(0x32, 0x38, 0x4E))
+                : new AmbientLight(Color.FromRgb(0x45, 0x36, 0x54));
 
             modelGroup.Children.Add(keyLight);
+            modelGroup.Children.Add(grazingLight);
             modelGroup.Children.Add(fillLight);
             modelGroup.Children.Add(rimLight);
-            modelGroup.Children.Add(bounceLight);
             modelGroup.Children.Add(ambientLight);
 
-            // Master Kinetic Container (Three.js Organic Floating Breath)
-            var masterGroup = new Model3DGroup();
-            _masterFloat = new TranslateTransform3D(0, 0, 0);
-            masterGroup.Transform = _masterFloat;
-
-            // 3A. Primary Outer Rotor (OmniWheel Primary Torus)
-            var outerMesh = GenerateTorusMesh(2.38, 0.40, 36, 18);
-            var outerMat = new MaterialGroup();
-            outerMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
-                Color.FromArgb(0xF6, 0xFF, 0xFD, 0xF8),
-                Color.FromArgb(0xD8, 0xEA, 0xE2, 0xD4),
-                new Point(0, 0), new Point(1, 1))));
-            outerMat.Children.Add(new SpecularMaterial(Brushes.White, 85.0));
-            var outerModel = new GeometryModel3D(outerMesh, outerMat) { BackMaterial = outerMat };
-
-            var outerTg = new Transform3DGroup();
-            _rotOuterY = new AxisAngleRotation3D(new Vector3D(0.18, 1.0, 0.12), 0);
-            _rotOuterX = new AxisAngleRotation3D(new Vector3D(1.0, 0.12, 0.18), 16);
-            outerTg.Children.Add(new RotateTransform3D(_rotOuterY));
-            outerTg.Children.Add(new RotateTransform3D(_rotOuterX));
-            outerModel.Transform = outerTg;
-            masterGroup.Children.Add(outerModel);
-
-            // 3B. Counter-Rotating Inner Gyroscopic Ring (Royal Amethyst Torus)
-            var innerMesh = GenerateTorusMesh(1.58, 0.26, 30, 16);
-            var innerMat = new MaterialGroup();
-            innerMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
-                Color.FromArgb(0xF0, 0xF5, 0xEE, 0xFD),
-                Color.FromArgb(0xD2, 0xC0, 0x84, 0xFC),
-                new Point(0, 0), new Point(1, 1))));
-            innerMat.Children.Add(new SpecularMaterial(new SolidColorBrush(Color.FromRgb(0xDD, 0xD6, 0xFE)), 95.0));
-            var innerModel = new GeometryModel3D(innerMesh, innerMat) { BackMaterial = innerMat };
-
-            var innerTg = new Transform3DGroup();
-            _rotInnerY = new AxisAngleRotation3D(new Vector3D(-0.25, 1.0, -0.3), 0);
-            _rotInnerX = new AxisAngleRotation3D(new Vector3D(1.0, 0.2, -0.2), -20);
-            _rotInnerZ = new AxisAngleRotation3D(new Vector3D(0.2, 0.2, 1.0), 0);
-            innerTg.Children.Add(new RotateTransform3D(_rotInnerY));
-            innerTg.Children.Add(new RotateTransform3D(_rotInnerX));
-            innerTg.Children.Add(new RotateTransform3D(_rotInnerZ));
-            innerModel.Transform = innerTg;
-            masterGroup.Children.Add(innerModel);
-
-            // 3C. Celestial Equatorial Golden Orbit Track Ring
-            var trackMesh = GenerateTorusMesh(1.98, 0.08, 40, 12);
-            var trackMat = new MaterialGroup();
-            trackMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(
-                Color.FromArgb(0xEE, 0xFF, 0xF7, 0xED),
-                Color.FromArgb(0xCC, 0xFD, 0xBA, 0x74),
-                new Point(0, 0), new Point(1, 1))));
-            trackMat.Children.Add(new SpecularMaterial(new SolidColorBrush(Color.FromRgb(0xFF, 0xED, 0xD5)), 100.0));
-            var trackModel = new GeometryModel3D(trackMesh, trackMat) { BackMaterial = trackMat };
-
-            var trackTg = new Transform3DGroup();
-            _rotTrackZ = new AxisAngleRotation3D(new Vector3D(0.3, 0.1, 1.0), 0);
-            _rotTrackX = new AxisAngleRotation3D(new Vector3D(1.0, 0.0, 0.3), 64);
-            trackTg.Children.Add(new RotateTransform3D(_rotTrackZ));
-            trackTg.Children.Add(new RotateTransform3D(_rotTrackX));
-            trackModel.Transform = trackTg;
-            masterGroup.Children.Add(trackModel);
-
-            // 3D. Orbiting Satellite Nodes (4 Procedural 3D Spheres in Harmonic Celestial Drift)
-            _nodeTrans = new TranslateTransform3D[4];
-            var sphereMesh = GenerateSphereMesh(0.18, 14, 14);
-
-            for (int i = 0; i < 4; i++)
+            // 4. Luxurious Velvet Material Definition
+            var velvetMat = new MaterialGroup();
+            if (!isUninstallMode)
             {
-                var sphereMat = new MaterialGroup();
-                Color c1 = (i % 2 == 0) ? Color.FromRgb(0xFF, 0x92, 0x33) : Color.FromRgb(0xA8, 0x55, 0xF7);
-                Color c2 = (i % 2 == 0) ? Color.FromRgb(0xEA, 0x58, 0x0C) : Color.FromRgb(0x7C, 0x3A, 0xED);
-                sphereMat.Children.Add(new DiffuseMaterial(new LinearGradientBrush(c1, c2, new Point(0, 0), new Point(1, 1))));
-                sphereMat.Children.Add(new SpecularMaterial(Brushes.White, 90.0));
+                // Rich Imperial Amethyst Velvet (Deep royal violet with shimmering mulberry fold ridges)
+                var diffuseBrush = new LinearGradientBrush(
+                    Color.FromArgb(0xFA, 0x4A, 0x15, 0x4B),
+                    Color.FromArgb(0xF4, 0x7E, 0x22, 0xCE),
+                    new Point(0, 0), new Point(1, 1));
+                diffuseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0x4A, 0x15, 0x4B), 0.0));
+                diffuseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0x7E, 0x22, 0xCE), 0.52));
+                diffuseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0xA8, 0x55, 0xF7), 1.0));
 
-                var sphereModel = new GeometryModel3D(sphereMesh, sphereMat) { BackMaterial = sphereMat };
-                _nodeTrans[i] = new TranslateTransform3D(0, 0, 0);
-                sphereModel.Transform = _nodeTrans[i];
-                masterGroup.Children.Add(sphereModel);
+                velvetMat.Children.Add(new DiffuseMaterial(diffuseBrush));
+                // Soft, broad specular reflection characteristic of plush velvet pile weave
+                velvetMat.Children.Add(new SpecularMaterial(new SolidColorBrush(Color.FromRgb(0xFA, 0xE8, 0xFF)), 36.0));
+            }
+            else
+            {
+                // Sophisticated Midnight Indigo Velvet (Melancholic deep navy with silver moon sheen)
+                var diffuseBrush = new LinearGradientBrush(
+                    Color.FromArgb(0xFA, 0x0F, 0x17, 0x2A),
+                    Color.FromArgb(0xF4, 0x31, 0x2E, 0x81),
+                    new Point(0, 0), new Point(1, 1));
+                diffuseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0x0F, 0x17, 0x2A), 0.0));
+                diffuseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0x31, 0x2E, 0x81), 0.52));
+                diffuseBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0x4F, 0x46, 0xE5), 1.0));
+
+                velvetMat.Children.Add(new DiffuseMaterial(diffuseBrush));
+                velvetMat.Children.Add(new SpecularMaterial(new SolidColorBrush(Color.FromRgb(0xE0, 0xE7, 0xFF)), 34.0));
             }
 
-            modelGroup.Children.Add(masterGroup);
+            // 5. Pre-allocate Cloth Geometry Topology (Triangle Indices & UVs)
+            _clothMesh = new MeshGeometry3D();
+            var indices = new Int32Collection((COLS - 1) * (ROWS - 1) * 6);
+            var uvs = new PointCollection(TOTAL_VERTS);
+
+            for (int r = 0; r < ROWS; r++)
+            {
+                double v = (double)r / (ROWS - 1);
+                for (int c = 0; c < COLS; c++)
+                {
+                    double u = (double)c / (COLS - 1);
+                    uvs.Add(new Point(u, v));
+                }
+            }
+
+            for (int r = 0; r < ROWS - 1; r++)
+            {
+                for (int c = 0; c < COLS - 1; c++)
+                {
+                    int i0 = r * COLS + c;
+                    int i1 = i0 + 1;
+                    int i2 = (r + 1) * COLS + c;
+                    int i3 = i2 + 1;
+
+                    indices.Add(i0);
+                    indices.Add(i2);
+                    indices.Add(i1);
+
+                    indices.Add(i1);
+                    indices.Add(i2);
+                    indices.Add(i3);
+                }
+            }
+
+            indices.Freeze();
+            uvs.Freeze();
+            _clothMesh.TriangleIndices = indices;
+            _clothMesh.TextureCoordinates = uvs;
+
+            // GeometryModel with double-sided velvet shading (both faces display velvet sheen)
+            var clothModel = new GeometryModel3D(_clothMesh, velvetMat)
+            {
+                BackMaterial = velvetMat
+            };
+            modelGroup.Children.Add(clothModel);
+
             var visual = new ModelVisual3D { Content = modelGroup };
             _viewport.Children.Add(visual);
             Children.Add(_viewport);
 
-            // 4. Interactive 3D Parallax Tracking via Parent Window Mouse Events
+            // 6. Interactive 3D Parallax & Breeze Tracking via Mouse Movement
             Loaded += delegate
             {
                 var win = Window.GetWindow(this);
@@ -827,14 +838,16 @@ namespace OMNIWHEEL.Installer
                         Point pt = e.GetPosition(win);
                         if (win.ActualWidth > 0 && win.ActualHeight > 0)
                         {
-                            _targetCamX = (pt.X / win.ActualWidth - 0.5) * 1.5;
-                            _targetCamY = -(pt.Y / win.ActualHeight - 0.5) * 1.1;
+                            _targetCamX = (pt.X / win.ActualWidth - 0.5) * 1.6;
+                            _targetCamY = -(pt.Y / win.ActualHeight - 0.5) * 1.2;
+                            _targetMouseU = Math.Max(0.0, Math.Min(1.0, pt.X / win.ActualWidth));
+                            _targetMouseV = Math.Max(0.0, Math.Min(1.0, pt.Y / win.ActualHeight));
                         }
                     };
                 }
             };
 
-            // 5. 60 FPS Three.js Dynamic PBR Animation Loop
+            // 7. 60 FPS Natural Velvet Cloth Swaying Simulation Loop
             _stopwatch = Stopwatch.StartNew();
             _animTimer = new DispatcherTimer(DispatcherPriority.Render)
             {
@@ -844,144 +857,108 @@ namespace OMNIWHEEL.Installer
             {
                 double elapsed = _stopwatch.ElapsedMilliseconds / 1000.0;
 
-                // Organic Floating Breath physics (Multi-harmonic sine wave)
-                double floatY = Math.Sin(elapsed * 1.35) * 0.14 + Math.Cos(elapsed * 2.1) * 0.04;
-                double floatZ = Math.Cos(elapsed * 1.1) * 0.08;
-                _masterFloat.OffsetY = floatY;
-                _masterFloat.OffsetZ = floatZ;
-
-                // Outer Rotor continuous rotation + gyroscopic pitch wobble
-                _rotOuterY.Angle = (_rotOuterY.Angle + 0.38) % 360.0;
-                _rotOuterX.Angle = 16.0 + Math.Sin(elapsed * 0.8) * 8.0;
-
-                // Inner Amethyst Rotor counter-rotation + harmonic roll
-                _rotInnerY.Angle = (_rotInnerY.Angle - 0.60) % 360.0;
-                _rotInnerX.Angle = -20.0 + Math.Cos(elapsed * 1.05) * 12.0;
-                _rotInnerZ.Angle = Math.Sin(elapsed * 0.75) * 15.0;
-
-                // Celestial Equatorial Track Ring tumbling roll
-                _rotTrackZ.Angle = (elapsed * 22.0) % 360.0;
-                _rotTrackX.Angle = 64.0 + Math.Sin(elapsed * 0.65) * 9.0;
-
-                // 4 Orbiting Satellite Nodes (Harmonic 3D Lissajous Orbits)
-                for (int k = 0; k < 4; k++)
-                {
-                    double nodeAngle = elapsed * 0.82 + (k * Math.PI / 2.0);
-                    double orbitRadius = 2.65 + Math.Sin(elapsed * 1.4 + k) * 0.16;
-                    double nx = orbitRadius * Math.Cos(nodeAngle);
-                    double nz = orbitRadius * Math.Sin(nodeAngle);
-                    double ny = Math.Sin(elapsed * 1.3 + k * 1.2) * 0.45;
-
-                    _nodeTrans[k].OffsetX = nx;
-                    _nodeTrans[k].OffsetY = ny;
-                    _nodeTrans[k].OffsetZ = nz;
-                }
-
-                // Interactive 3D Camera Parallax interpolation
+                // Smooth camera parallax interpolation
                 _camX += (_targetCamX - _camX) * 0.05;
                 _camY += (_targetCamY - _camY) * 0.05;
-                _camera.Position = new Point3D(_camX, _camY, 8.2);
-                _camera.LookDirection = new Vector3D(-_camX * 0.5, -_camY * 0.5, -8.2);
+                _camera.Position = new Point3D(_camX, _camY, 5.2);
+                _camera.LookDirection = new Vector3D(-_camX * 0.35, -_camY * 0.35, -5.2);
 
-                // Dynamic Caustic Glow Drift
-                _glow1Trans.X = Math.Sin(elapsed * 0.85) * 45.0;
-                _glow1Trans.Y = Math.Cos(elapsed * 1.1) * 35.0;
-                _glow2Trans.X = -Math.Cos(elapsed * 0.7) * 40.0;
-                _glow2Trans.Y = -Math.Sin(elapsed * 0.95) * 30.0;
-                _glow3Trans.X = Math.Cos(elapsed * 0.6) * 30.0;
-                _glow3Trans.Y = Math.Sin(elapsed * 0.75) * 25.0;
+                // Smooth mouse breeze focal point tracking
+                _mouseU += (_targetMouseU - _mouseU) * 0.06;
+                _mouseV += (_targetMouseV - _mouseV) * 0.06;
+
+                // Physics Simulation: Multi-Harmonic Natural Velvet Cloth Sway
+                for (int r = 0; r < ROWS; r++)
+                {
+                    double v = (double)r / (ROWS - 1);
+                    // Draping tension curve: top is anchored with subtle folds; bottom billows freely
+                    double hang = 0.20 + 0.80 * Math.Pow(v, 1.25);
+
+                    for (int c = 0; c < COLS; c++)
+                    {
+                        double u = (double)c / (COLS - 1);
+                        double xBase = -4.0 + u * 8.0;
+                        double yBase = 2.75 - v * 5.50;
+
+                        // 1) Vertical Accordion Folds (Deep natural pleats along the hanging fabric)
+                        double fFold = Math.Sin(u * 14.5 + Math.Sin(v * 2.5 + elapsed * 0.75) * 1.5) * (0.35 + 0.22 * v);
+
+                        // 2) Primary Transverse Wind Sway (Rolling billow propagating across cloth)
+                        double fWind = Math.Sin(u * 4.0 - elapsed * 1.45 + v * 2.4) * (0.44 * hang);
+
+                        // 3) Secondary Diagonal Cross-Wave (Adds organic richness to the fabric movement)
+                        double fCross = Math.Cos(u * 5.6 + v * 3.8 - elapsed * 1.05) * (0.22 * hang);
+
+                        // 4) Micro-Fiber Flutter (Gentle high-frequency flutter like velvet catching draft)
+                        double fFlutter = Math.Sin(u * 9.2 - v * 6.8 - elapsed * 2.5) * (0.07 * hang);
+
+                        // 5) Interactive Mouse Breeze (Localized gust of air pushing the velvet cloth)
+                        double du = u - _mouseU;
+                        double dv = v - _mouseV;
+                        double fMouse = 0.45 * Math.Exp(-(du * du + dv * dv) / 0.12) * hang;
+
+                        // Combined 3D Cloth Coordinates
+                        double z = fFold + fWind + fCross + fFlutter + fMouse - 0.20;
+                        // Lateral swaying in X and subtle lifting in Y due to fabric arc conservation
+                        double x = xBase + Math.Sin(elapsed * 1.15 + v * 2.2) * 0.20 * hang + (u - 0.5) * 0.25 * Math.Sin(elapsed * 0.85);
+                        double y = yBase - Math.Cos(fWind / 0.45) * 0.12 * hang + Math.Sin(elapsed * 0.8 + u * 2.0) * 0.07 * hang;
+
+                        _positionsBuffer[r * COLS + c] = new Point3D(x, y, z);
+                    }
+                }
+
+                // Analytical Smooth Surface Normal Calculation for Realistic Specular Sheen
+                for (int r = 0; r < ROWS; r++)
+                {
+                    int rUp = Math.Max(0, r - 1);
+                    int rDown = Math.Min(ROWS - 1, r + 1);
+
+                    for (int c = 0; c < COLS; c++)
+                    {
+                        int cLeft = Math.Max(0, c - 1);
+                        int cRight = Math.Min(COLS - 1, c + 1);
+
+                        Point3D pL = _positionsBuffer[r * COLS + cLeft];
+                        Point3D pR = _positionsBuffer[r * COLS + cRight];
+                        Point3D pU = _positionsBuffer[rUp * COLS + c];
+                        Point3D pD = _positionsBuffer[rDown * COLS + c];
+
+                        Vector3D tu = new Vector3D(pR.X - pL.X, pR.Y - pL.Y, pR.Z - pL.Z);
+                        Vector3D tv = new Vector3D(pD.X - pU.X, pD.Y - pU.Y, pD.Z - pU.Z);
+                        Vector3D n = Vector3D.CrossProduct(tu, tv);
+                        if (n.Length > 0.0001)
+                        {
+                            n.Normalize();
+                        }
+                        else
+                        {
+                            n = new Vector3D(0, 0, 1);
+                        }
+                        if (n.Z < 0)
+                        {
+                            n = -n;
+                        }
+                        _normalsBuffer[r * COLS + c] = n;
+                    }
+                }
+
+                // Batch update mesh positions and normals atomically
+                var positions = new Point3DCollection(_positionsBuffer);
+                var normals = new Vector3DCollection(_normalsBuffer);
+                positions.Freeze();
+                normals.Freeze();
+                _clothMesh.Positions = positions;
+                _clothMesh.Normals = normals;
+
+                // Synchronized Ambient Caustic Drift
+                _glow1Trans.X = Math.Sin(elapsed * 0.75) * 40.0;
+                _glow1Trans.Y = Math.Cos(elapsed * 0.95) * 30.0;
+                _glow2Trans.X = -Math.Cos(elapsed * 0.65) * 35.0;
+                _glow2Trans.Y = -Math.Sin(elapsed * 0.85) * 25.0;
+                _glow3Trans.X = Math.Cos(elapsed * 0.55) * 25.0;
+                _glow3Trans.Y = Math.Sin(elapsed * 0.70) * 20.0;
             };
             _animTimer.Start();
-        }
-
-        private static MeshGeometry3D GenerateTorusMesh(double majorRadius, double minorRadius, int majorSegments, int minorSegments)
-        {
-            var mesh = new MeshGeometry3D();
-            for (int i = 0; i <= majorSegments; i++)
-            {
-                double u = (double)i / majorSegments * 2.0 * Math.PI;
-                double cosU = Math.Cos(u);
-                double sinU = Math.Sin(u);
-
-                for (int j = 0; j <= minorSegments; j++)
-                {
-                    double v = (double)j / minorSegments * 2.0 * Math.PI;
-                    double cosV = Math.Cos(v);
-                    double sinV = Math.Sin(v);
-
-                    double x = (majorRadius + minorRadius * cosV) * cosU;
-                    double y = (majorRadius + minorRadius * cosV) * sinU;
-                    double z = minorRadius * sinV;
-
-                    mesh.Positions.Add(new Point3D(x, y, z));
-                    mesh.Normals.Add(new Vector3D(cosV * cosU, cosV * sinU, sinV));
-                    mesh.TextureCoordinates.Add(new Point((double)i / majorSegments, (double)j / minorSegments));
-                }
-            }
-
-            for (int i = 0; i < majorSegments; i++)
-            {
-                for (int j = 0; j < minorSegments; j++)
-                {
-                    int current = i * (minorSegments + 1) + j;
-                    int next = (i + 1) * (minorSegments + 1) + j;
-
-                    mesh.TriangleIndices.Add(current);
-                    mesh.TriangleIndices.Add(next);
-                    mesh.TriangleIndices.Add(current + 1);
-
-                    mesh.TriangleIndices.Add(current + 1);
-                    mesh.TriangleIndices.Add(next);
-                    mesh.TriangleIndices.Add(next + 1);
-                }
-            }
-
-            return mesh;
-        }
-
-        private static MeshGeometry3D GenerateSphereMesh(double radius, int latSegments, int lonSegments)
-        {
-            var mesh = new MeshGeometry3D();
-            for (int lat = 0; lat <= latSegments; lat++)
-            {
-                double theta = (double)lat / latSegments * Math.PI;
-                double sinTheta = Math.Sin(theta);
-                double cosTheta = Math.Cos(theta);
-
-                for (int lon = 0; lon <= lonSegments; lon++)
-                {
-                    double phi = (double)lon / lonSegments * 2.0 * Math.PI;
-                    double sinPhi = Math.Sin(phi);
-                    double cosPhi = Math.Cos(phi);
-
-                    double x = radius * sinTheta * cosPhi;
-                    double y = radius * cosTheta;
-                    double z = radius * sinTheta * sinPhi;
-
-                    mesh.Positions.Add(new Point3D(x, y, z));
-                    mesh.Normals.Add(new Vector3D(sinTheta * cosPhi, cosTheta, sinTheta * sinPhi));
-                    mesh.TextureCoordinates.Add(new Point((double)lon / lonSegments, (double)lat / latSegments));
-                }
-            }
-
-            for (int lat = 0; lat < latSegments; lat++)
-            {
-                for (int lon = 0; lon < lonSegments; lon++)
-                {
-                    int first = lat * (lonSegments + 1) + lon;
-                    int second = first + lonSegments + 1;
-
-                    mesh.TriangleIndices.Add(first);
-                    mesh.TriangleIndices.Add(second);
-                    mesh.TriangleIndices.Add(first + 1);
-
-                    mesh.TriangleIndices.Add(second);
-                    mesh.TriangleIndices.Add(second + 1);
-                    mesh.TriangleIndices.Add(first + 1);
-                }
-            }
-
-            return mesh;
         }
     }
 
